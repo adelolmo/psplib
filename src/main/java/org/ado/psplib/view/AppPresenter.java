@@ -304,6 +304,10 @@ public class AppPresenter implements Initializable {
         }
     }
 
+    public void exit(){
+        stage.close();
+    }
+
     public void onGameClicked() {
         final ObservableList<GameView> selectedItems = gamesListView.getSelectionModel().getSelectedItems();
         if (!selectedItems.isEmpty()) {
