@@ -13,13 +13,10 @@
 
 <Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="366.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.ado.psplib.view.about.AboutPresenter">
     <children>
-        <ImageView fitHeight="100.0" fitWidth="100.0" layoutX="23.0" layoutY="18.0" pickOnBounds="true" preserveRatio="true">
+        <ImageView fitWidth="108.0" layoutX="23.0" layoutY="26.0" pickOnBounds="true" preserveRatio="true">
             <image>
-                <Image url="@../../icon.png" />
+                <Image url="@psp.jpeg" />
             </image>
-            <viewport>
-                <Rectangle2D height="512.0" width="512.0" />
-            </viewport>
         </ImageView>
         <Button layoutX="717.0" layoutY="327.0" mnemonicParsing="false" onAction="#close" text="Close" />
         <HBox layoutX="150.0" layoutY="80.0" spacing="10.0">
