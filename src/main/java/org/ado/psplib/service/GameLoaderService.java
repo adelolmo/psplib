@@ -51,6 +51,8 @@ public class GameLoaderService extends Service<GameView> {
         return new Task<GameView>() {
             @Override
             protected GameView call() throws Exception {
+                System.out.println(libraryDir);
+                list.clear();
                 if (libraryDir != null && new File(libraryDir).exists()) {
                     final Collection<File> gameFiles =
                             FileUtils.listFilesAndDirs(new File(libraryDir),
@@ -63,8 +65,6 @@ public class GameLoaderService extends Service<GameView> {
                         list.add(new GameView(FilenameUtils.getBaseName(file.getName()),
                                 gson.fromJson(new FileReader(file), Game.class)));
                     }
-                } else {
-                    list.clear();
                 }
                 return null;
             }

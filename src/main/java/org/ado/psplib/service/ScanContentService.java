@@ -1,11 +1,13 @@
 package org.ado.psplib.service;
 
 import com.google.gson.Gson;
+import javafx.collections.ObservableList;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import org.ado.psplib.Downloader;
 import org.ado.psplib.Game;
 import org.ado.psplib.common.AppConfiguration;
+import org.ado.psplib.core.GameView;
 import org.ado.psplib.crawler.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -35,12 +37,17 @@ public class ScanContentService extends Service<File> {
     private static final Logger LOGGER = LoggerFactory.getLogger(ScanContentService.class);
 
     private List<GameCrawler> gameCrawlers;
+    private ObservableList<GameView> list;
 
     public ScanContentService() {
         gameCrawlers = new ArrayList<>();
         gameCrawlers.add(new MetaCriticCrawler(new Downloader()));
         gameCrawlers.add(new IgnCrawler(new Downloader()));
         gameCrawlers.add(new GameFaqsCrawler(new Downloader()));
+    }
+
+    public void setList(ObservableList<GameView> list) {
+        this.list = list;
     }
 
     @Override
@@ -82,7 +89,8 @@ public class ScanContentService extends Service<File> {
                             fileWriter =
                                     new FileWriter(
                                             new File(
-                                                    AppConfiguration.getConfigurationProperty("lib.dir"), baseName + ".json"));
+                                                    AppConfiguration.getConfigurationProperty("lib.dir"),
+                                                    baseName + ".json"));
                             gson.toJson(game, fileWriter);
 
                             final URL url = gameMetadata.imageUrl();
@@ -93,6 +101,8 @@ public class ScanContentService extends Service<File> {
                                             StandardCopyOption.REPLACE_EXISTING);
                                 }
                             }
+
+                            list.add(new GameView(baseName, game));
                         } catch (Exception e) {
 //                            LOGGER.warn(e.getMessage(), e);
                         } finally {

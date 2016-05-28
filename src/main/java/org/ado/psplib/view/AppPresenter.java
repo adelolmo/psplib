@@ -124,6 +124,7 @@ public class AppPresenter implements Initializable {
             refresh();
         });
 
+        scanContentService.setList(gameViewObservableList);
         scanContentService.valueProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
                 statusLabel.setText(String.format("Processing \"%s\" ...", newValue.getName()));
