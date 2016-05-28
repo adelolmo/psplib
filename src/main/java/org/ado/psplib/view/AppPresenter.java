@@ -1,6 +1,6 @@
 package org.ado.psplib.view;
 
-import com.google.gson.Gson;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -13,7 +13,6 @@ import javafx.scene.layout.Pane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
-import org.ado.psplib.Game;
 import org.ado.psplib.common.AppConfiguration;
 import org.ado.psplib.core.GameView;
 import org.ado.psplib.service.GameLoaderService;
@@ -35,10 +34,11 @@ import javax.inject.Inject;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.net.URL;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.ResourceBundle;
 import java.util.stream.Collectors;
 
 /**
@@ -58,8 +58,6 @@ public class AppPresenter implements Initializable {
     private UninstallGameService uninstallGameService;
     @Inject
     private GameLoaderService gameLoaderService;
-    @Inject
-    private Gson gson;
 
     private Stage stage;
 
@@ -193,74 +191,28 @@ public class AppPresenter implements Initializable {
                             : true;
                 })
                 .sorted(((gw1, gw2) -> {
-                    switch (sortComboBox.getValue()) {
-                        case TITLE:
-                            return gw1.game().title().compareTo(gw2.game().title());
-                        case SCORE:
-                            return Integer.compare(gw2.game().metaScore(), gw1.game().metaScore());
-                        case SIZE:
-                            return Long.compare(
-                                    new File(libraryDir, gw2.fileBaseName() + ".cso").length(),
-                                    new File(libraryDir, gw1.fileBaseName() + ".cso").length());
-                        default:
-                            return gw1.game().title().compareTo(gw2.game().title());
+                    final SortType sortType = sortComboBox.getValue();
+                    if (sortType != null) {
+                        switch (sortType) {
+                            case TITLE:
+                                return gw1.game().title().compareTo(gw2.game().title());
+                            case SCORE:
+                                return Integer.compare(gw2.game().metaScore(), gw1.game().metaScore());
+                            case SIZE:
+                                return Long.compare(
+                                        new File(libraryDir, gw2.fileBaseName() + ".cso").length(),
+                                        new File(libraryDir, gw1.fileBaseName() + ".cso").length());
+                            default:
+                                return gw1.game().title().compareTo(gw2.game().title());
+                        }
+                    } else {
+                        return 1;
                     }
                 })).collect(Collectors.toList());
 
         gamesListView.setItems(FXCollections.observableList(collect));
 
         refresh();
-    }
-
-    private List<GameView> getAvailableGames() {
-        return getAvailableGames(null, SortType.TITLE);
-    }
-
-    private List<GameView> getAvailableGames(String searchSequence, SortType sortType) {
-        final String libraryDir = AppConfiguration.getConfigurationProperty("lib.dir");
-        final Collection<File> gameFiles = FileUtils.listFilesAndDirs(new File(libraryDir),
-                new WildcardFileFilter("*.json"),
-                FileFileFilter.FILE);
-        final Map<File, Game> gameMap = new HashMap<>();
-        final List<Game> collect = gameFiles.stream()
-                .filter(file -> !file.getAbsolutePath().equals(libraryDir))
-                .map(file -> {
-                    try {
-                        return gameMap.put(file, gson.fromJson(new FileReader(file), Game.class));
-                    } catch (FileNotFoundException e) {
-                        throw new IllegalStateException(e);
-                    }
-                }).collect(Collectors.toList());
-        return gameFiles.stream()
-                .filter(file -> !file.getAbsolutePath().equals(libraryDir))
-                .filter(file -> {
-                    return searchSequence != null ?
-                            gameMap.get(file).title().toLowerCase().contains(searchSequence)
-                            : true;
-                })
-                .sorted((f1, f2) -> compareGames(f1, f2, sortType, gameMap))
-                .map(file -> new GameView(FilenameUtils.getBaseName(file.getName()),
-                        gameMap.get(file)))
-                .collect(Collectors.toList());
-    }
-
-    private int compareGames(File f1, File f2, SortType sortType, Map<File, Game> gameMap) {
-        final Game gameOne = gameMap.get(f1);
-        final Game gameTwo = gameMap.get(f2);
-        switch (sortType) {
-            case TITLE:
-                return gameOne.title().compareTo(gameTwo.title());
-            case SCORE:
-                return Integer.compare(gameTwo.metaScore(), gameOne.metaScore());
-            case SIZE:
-                return Long.compare(getCsoFile(f2).length(), getCsoFile(f1).length());
-            default:
-                return gameOne.title().compareTo(gameTwo.title());
-        }
-    }
-
-    private File getCsoFile(File file) {
-        return new File(file.getAbsolutePath().replaceAll("\\.json", "\\.cso"));
     }
 
     private void refresh() {
@@ -411,7 +363,7 @@ public class AppPresenter implements Initializable {
                 super.updateItem(gameView, empty);
                 getStyleClass().remove("gameInstalled");
                 if (!empty) {
-                    setText(gameView.game().title());
+                    Platform.runLater(() -> setText(gameView.game().title()));
                     if (installedGames.contains(gameView.fileBaseName())) {
                         getStyleClass().add("gameInstalled");
                     }

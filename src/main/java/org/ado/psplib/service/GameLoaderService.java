@@ -51,9 +51,7 @@ public class GameLoaderService extends Service<GameView> {
         return new Task<GameView>() {
             @Override
             protected GameView call() throws Exception {
-                System.out.println("loading games... " + libraryDir);
                 if (libraryDir != null && new File(libraryDir).exists()) {
-
                     final Collection<File> gameFiles =
                             FileUtils.listFilesAndDirs(new File(libraryDir),
                                     new WildcardFileFilter("*.json"),
@@ -61,46 +59,10 @@ public class GameLoaderService extends Service<GameView> {
                                     .stream()
                                     .filter(file -> !file.getAbsolutePath().equals(libraryDir))
                                     .collect(Collectors.toList());
-                    //                    final Map<File, Game> gameMap = new HashMap<>();
-//                    System.out.println(gameFiles);
                     for (File file : gameFiles) {
-//                        System.out.println(file);
                         list.add(new GameView(FilenameUtils.getBaseName(file.getName()),
                                 gson.fromJson(new FileReader(file), Game.class)));
-//                        updateValue(
-//                                new GameView(FilenameUtils.getBaseName(file.getName()),
-//                                        gson.fromJson(new FileReader(file), Game.class)));
                     }
-
-/*
-                    final List<Game> collect = gameFiles.stream()
-                            .filter(file -> !file.getAbsolutePath().equals(libraryDir))
-                            .map(file -> {
-                                try {
-                                    return gameMap.put(file, gson.fromJson(new FileReader(file), Game.class));
-                                } catch (FileNotFoundException e) {
-                                    throw new IllegalStateException(e);
-                                }
-                            }).collect(Collectors.toList());
-
-                    for (File file : gameFiles) {
-                        updateValue(new GameView(FilenameUtils.getBaseName(file.getName()),
-                                gameMap.get(file)));
-                    }
-*/
-
-/*                    final List<GameView> gameViewList = gameFiles.stream()
-                            .filter(file -> !file.getAbsolutePath().equals(libraryDir))
-*//*                            .filter(file -> {
-                                return searchSequence != null ?
-                                        gameMap.get(file).title().toLowerCase().contains(searchSequence)
-                                        : true;
-                            })*//*
-                            .sorted((f1, f2) -> compareGames(f1, f2, sortType, gameMap))
-                            .map(file -> new GameView(FilenameUtils.getBaseName(file.getName()),
-                                    gameMap.get(file)))
-                            .collect(Collectors.toList());*/
-
                 } else {
                     list.clear();
                 }
