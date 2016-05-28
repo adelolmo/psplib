@@ -20,6 +20,8 @@ import org.ado.psplib.service.GameLoaderService;
 import org.ado.psplib.service.InstallGameService;
 import org.ado.psplib.service.ScanContentService;
 import org.ado.psplib.service.UninstallGameService;
+import org.ado.psplib.view.about.AboutPresenter;
+import org.ado.psplib.view.about.AboutView;
 import org.ado.psplib.view.settings.SettingsPresenter;
 import org.ado.psplib.view.settings.SettingsView;
 import org.apache.commons.io.FileUtils;
@@ -198,8 +200,8 @@ public class AppPresenter implements Initializable {
                             return Integer.compare(gw2.game().metaScore(), gw1.game().metaScore());
                         case SIZE:
                             return Long.compare(
-                                    new File(libraryDir,gw2.fileBaseName() + ".cso").length(),
-                                    new File(libraryDir,gw1.fileBaseName() + ".cso").length());
+                                    new File(libraryDir, gw2.fileBaseName() + ".cso").length(),
+                                    new File(libraryDir, gw1.fileBaseName() + ".cso").length());
                         default:
                             return gw1.game().title().compareTo(gw2.game().title());
                     }
@@ -304,8 +306,19 @@ public class AppPresenter implements Initializable {
         }
     }
 
-    public void exit(){
+    public void exit() {
         stage.close();
+    }
+
+    public void about() {
+        final Stage stage = new Stage();
+        final AboutView aboutView = new AboutView();
+        final AboutPresenter presenter = (AboutPresenter) aboutView.getPresenter();
+        presenter.setStage(stage);
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.setScene(new Scene(aboutView.getView()));
+        stage.setTitle("About");
+        stage.show();
     }
 
     public void onGameClicked() {

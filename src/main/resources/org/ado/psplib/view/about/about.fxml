@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Rectangle2D?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="366.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.ado.psplib.view.about.AboutPresenter">
+    <children>
+        <ImageView fitHeight="100.0" fitWidth="100.0" layoutX="23.0" layoutY="18.0" pickOnBounds="true" preserveRatio="true">
+            <image>
+                <Image url="@../../icon.png" />
+            </image>
+            <viewport>
+                <Rectangle2D height="512.0" width="512.0" />
+            </viewport>
+        </ImageView>
+        <Button layoutX="717.0" layoutY="327.0" mnemonicParsing="false" onAction="#close" text="Close" />
+        <HBox layoutX="150.0" layoutY="80.0" spacing="10.0">
+            <children>
+                <Label layoutX="150.0" layoutY="60.0" text="Version:" />
+                <Label fx:id="labelApplicationVersion" layoutX="233.0" layoutY="58.0" text="Label" />
+            </children>
+        </HBox>
+        <Label layoutX="150.0" layoutY="20.0" text="PSP Library" />
+        <Label layoutX="150.0" layoutY="40.0" prefHeight="15.0" prefWidth="568.0" text="Orgnize your PSP games library and connect it with you PSP console" />
+        <TextArea editable="false" layoutX="150.0" layoutY="118.0" prefHeight="200.0" prefWidth="621.0" text="Copyright (c) 2016 Andoni del Olmo&#10;&#10;Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);&#10;you may not use this file except in compliance with the License.&#10;You may obtain a copy of the License at&#10;&#10;http://www.apache.org/licenses/LICENSE-2.0&#10;&#10;Unless required by applicable law or agreed to in writing, software&#10;distributed under the License is distributed on an &quot;AS IS&quot; BASIS,&#10;WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.&#10;See the License for the specific language governing permissions and&#10;limitations under the License." />
+    </children>
+</Pane>
