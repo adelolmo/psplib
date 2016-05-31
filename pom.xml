@@ -6,7 +6,20 @@
 
     <groupId>org.ado</groupId>
     <artifactId>psplib</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
+
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+
+        <javafx.version>2.2</javafx.version>
+
+        <exec.mainClass>org.ado.psplib.App</exec.mainClass>
+        <project.build.scriptSourceDirectory>bin</project.build.scriptSourceDirectory>
+        <release.directory>${project.build.directory}/release</release.directory>
+        <deb.directory>${project.build.directory}/jfx/native</deb.directory>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -22,7 +35,7 @@
         <dependency>
             <groupId>com.airhacks</groupId>
             <artifactId>afterburner.fx</artifactId>
-            <version>1.6.3</version>
+            <version>1.7.0</version>
         </dependency>
         <dependency>
             <groupId>org.jsoup</groupId>
@@ -60,15 +73,150 @@
                 <directory>${project.basedir}/src/main/resources</directory>
             </resource>
         </resources>
+
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>de.jutzig</groupId>
+                    <artifactId>github-release-plugin</artifactId>
+                    <version>1.1.1</version>
+                    <executions>
+                        <execution>
+                            <phase>install</phase>
+                            <goals>
+                                <goal>release</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <serverId>github</serverId>
+                        <description>Description of your release</description>
+                        <releaseName>PSP Library ${project.version}</releaseName>
+                        <tag>v${project.version}</tag>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.5.1</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.4</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <mainClass>${exec.mainClass}</mainClass>
+                            <classpathLayoutType>repository</classpathLayoutType>
+                        </manifest>
+                        <manifestEntries>
+                            <JavaFX-Application-Class>${exec.mainClass}</JavaFX-Application-Class>
+                            <Main-Class>${exec.mainClass}</Main-Class>
+                            <JavaFX-Version>${javafx.version}+</JavaFX-Version>
+                            <Class-Path>javafx-${javafx.version}.jar</Class-Path>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+<!--            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.3</version>
+                <configuration>
+                    <descriptors>
+                        <descriptor>src/main/assembly/assembly.xml</descriptor>
+                    </descriptors>
+                    <outputDirectory>${release.directory}</outputDirectory>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>-->
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>de.jutzig</groupId>
+                        <artifactId>github-release-plugin</artifactId>
+                        <configuration>
+                            <fileSets>
+                                <fileSet>
+                                    <directory>${release.directory}</directory>
+                                    <includes>
+                                        <include>*.deb</include>
+                                        <!--<include>*.tar.gz</include>-->
+                                    </includes>
+                                </fileSet>
+                            </fileSets>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>deb</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.zenjava</groupId>
+                        <artifactId>javafx-maven-plugin</artifactId>
+                        <version>8.1.4</version>
+                        <configuration>
+                            <vendor>Andoni del Olmo</vendor>
+                            <mainClass>${exec.mainClass}</mainClass>
+                            <appName>PSP Library</appName>
+                            <nativeReleaseVersion>${project.version}</nativeReleaseVersion>
+                            <nativeOutputDir>${release.directory}</nativeOutputDir>
+                            <additionalAppResources>${project.basedir}/src/main/deploy</additionalAppResources>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>create-jfxjar</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>build-jar</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>create-native</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>build-native</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+    <scm>
+        <url>https://github.com/adelolmo/psplib</url>
+        <connection>scm:git:https://github.com/adelolmo/psplib.git</connection>
+        <developerConnection>scm:git:https://github.com/adelolmo/psplib.git</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
 </project>
