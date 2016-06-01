@@ -27,6 +27,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.FileFileFilter;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,9 +37,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.net.URL;
 import java.text.SimpleDateFormat;
-import java.util.Collections;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -100,6 +99,9 @@ public class AppPresenter implements Initializable {
     @FXML
     private ComboBox<SortType> sortComboBox;
 
+    @FXML
+    private ComboBox<String> genreComboBox;
+
     private final ObservableList<GameView> gameViewObservableList = FXCollections.observableArrayList();
 
     @Override
@@ -109,14 +111,27 @@ public class AppPresenter implements Initializable {
         sortComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
             onSearch();
         });
+        genreComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
+            onSearch();
+        });
         gameLoaderService.setList(gameViewObservableList);
         gamesListView.setItems(gameViewObservableList);
         gameLoaderService.valueProperty().addListener((observable, oldValue, newValue) -> {
             scoreLabel.setText("Loading games...");
-//            refresh();
         });
         gameLoaderService.setOnSucceeded(event -> {
             statusLabel.setText(String.format("%d games found.", gamesListView.getItems().size()));
+
+            final List<String> genres = new ArrayList<>();
+            gameViewObservableList.stream()
+                    .forEach(gameView -> genres.addAll(Arrays.asList(gameView.game().genre())));
+            final List<String> uniqueGenres = genres.stream()
+                    .distinct()
+                    .sorted(String::compareTo)
+                    .collect(Collectors.toList());
+            uniqueGenres.add(0, "");
+            genreComboBox.setItems(FXCollections.observableList(uniqueGenres));
+
             refresh();
         });
         gameLoaderService.setOnFailed(event -> {
@@ -131,14 +146,11 @@ public class AppPresenter implements Initializable {
             }
         });
         scanContentService.setOnSucceeded(event -> {
-//            final List<GameView> availableGames = getAvailableGames();
             statusLabel.setText(String.format("Scan new content finished. %d games available.", gameViewObservableList.size()));
-//            gamesListView.setItems(FXCollections.observableList(availableGames));
             refresh();
         });
         scanContentService.setOnFailed(event -> {
             statusLabel.setText("Scan new content failed!");
-//            gamesListView.setItems(FXCollections.observableList(getAvailableGames()));
             refresh();
             LOGGER.error(event.getSource().exceptionProperty().getValue().toString());
         });
@@ -191,6 +203,9 @@ public class AppPresenter implements Initializable {
                                     .contains(searchTextField.getCharacters().toString())
                             : true;
                 })
+                .filter(gameView ->
+                        StringUtils.isEmpty(genreComboBox.getValue())
+                                || Arrays.asList(gameView.game().genre()).contains(genreComboBox.getValue()))
                 .sorted(((gw1, gw2) -> {
                     final SortType sortType = sortComboBox.getValue();
                     if (sortType != null) {

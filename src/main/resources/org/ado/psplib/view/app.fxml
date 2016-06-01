@@ -20,9 +20,9 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
 
-<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="593.0" prefWidth="624.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.ado.psplib.view.AppPresenter">
+<Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="593.0" prefWidth="684.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.ado.psplib.view.AppPresenter">
    <children>
-      <MenuBar prefHeight="29.0" prefWidth="624.0">
+      <MenuBar prefHeight="29.0" prefWidth="684.0">
         <menus>
           <Menu mnemonicParsing="false" text="File">
             <items>
@@ -52,6 +52,12 @@
                </padding>
             </Label>
              <ComboBox fx:id="sortComboBox" prefWidth="150.0" />
+            <Label text="Genre:">
+               <padding>
+                  <Insets left="10.0" right="5.0" />
+               </padding>
+            </Label>
+            <ComboBox fx:id="genreComboBox" prefWidth="150.0" />
          </children>
       </HBox>
       <ListView fx:id="gamesListView" layoutX="14.0" layoutY="69.0" onMouseClicked="#onGameClicked" prefHeight="484.0" prefWidth="345.0" />
@@ -136,7 +142,7 @@
          <children>
             <Label fx:id="statusLabel" prefHeight="16.0" prefWidth="345.0" />
             <ProgressBar fx:id="spaceProgressBar" prefHeight="20.0" prefWidth="143.0" progress="0.0" />
-            <Label fx:id="freeLabel" alignment="CENTER_RIGHT" prefHeight="15.0" prefWidth="104.0" textAlignment="CENTER">
+            <Label fx:id="freeLabel" alignment="CENTER_RIGHT" prefHeight="15.0" prefWidth="169.0" textAlignment="CENTER">
                <padding>
                   <Insets left="3.0" />
                </padding>
