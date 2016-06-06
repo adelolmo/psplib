@@ -181,13 +181,17 @@
                     <plugin>
                         <groupId>com.zenjava</groupId>
                         <artifactId>javafx-maven-plugin</artifactId>
-                        <version>8.1.4</version>
+                        <version>8.5.0</version>
                         <configuration>
                             <vendor>Andoni del Olmo</vendor>
                             <mainClass>${exec.mainClass}</mainClass>
                             <appName>PSP Library</appName>
+                            <bundler>deb</bundler>
                             <nativeReleaseVersion>${project.version}</nativeReleaseVersion>
                             <nativeOutputDir>${release.directory}</nativeOutputDir>
+                            <bundleArguments>
+                                <licenseFile>License</licenseFile>
+                            </bundleArguments>
                             <additionalAppResources>${project.basedir}/src/main/deploy</additionalAppResources>
                         </configuration>
                         <executions>
