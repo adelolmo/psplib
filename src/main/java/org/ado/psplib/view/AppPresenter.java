@@ -121,17 +121,7 @@ public class AppPresenter implements Initializable {
         });
         gameLoaderService.setOnSucceeded(event -> {
             statusLabel.setText(String.format("%d games found.", gamesListView.getItems().size()));
-
-            final List<String> genres = new ArrayList<>();
-            gameViewObservableList.stream()
-                    .forEach(gameView -> genres.addAll(Arrays.asList(gameView.game().genre())));
-            final List<String> uniqueGenres = genres.stream()
-                    .distinct()
-                    .sorted(String::compareTo)
-                    .collect(Collectors.toList());
-            uniqueGenres.add(0, "");
-            genreComboBox.setItems(FXCollections.observableList(uniqueGenres));
-
+            populateGenres();
             refresh();
         });
         gameLoaderService.setOnFailed(event -> {
@@ -147,6 +137,7 @@ public class AppPresenter implements Initializable {
         });
         scanContentService.setOnSucceeded(event -> {
             statusLabel.setText(String.format("Scan new content finished. %d games available.", gameViewObservableList.size()));
+            populateGenres();
             refresh();
         });
         scanContentService.setOnFailed(event -> {
@@ -192,6 +183,18 @@ public class AppPresenter implements Initializable {
 
         refreshSpaceProgressBar();
         gameLoaderService.start();
+    }
+
+    private void populateGenres() {
+        final List<String> genres = new ArrayList<>();
+        gameViewObservableList.stream()
+                .forEach(gameView -> genres.addAll(Arrays.asList(gameView.game().genre())));
+        final List<String> uniqueGenres = genres.stream()
+                .distinct()
+                .sorted(String::compareTo)
+                .collect(Collectors.toList());
+        uniqueGenres.add(0, "");
+        genreComboBox.setItems(FXCollections.observableList(uniqueGenres));
     }
 
     public void onSearch() {
