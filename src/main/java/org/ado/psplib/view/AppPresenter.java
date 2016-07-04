@@ -245,7 +245,7 @@ public class AppPresenter implements Initializable {
     }
 
     private void refreshSpaceProgressBar() {
-        final File pspDirectory = new File(AppConfiguration.getConfigurationProperty("psp.dir"));
+        final File pspDirectory = getPspDirectory();
         freeLabel.setText((pspDirectory.getFreeSpace() / 1024) / 1024 + " MB Free");
         final long usedSpace = pspDirectory.getTotalSpace() - pspDirectory.getFreeSpace();
         spaceProgressBar.setProgress(((usedSpace * 100) / (double) pspDirectory.getTotalSpace() / 100));
