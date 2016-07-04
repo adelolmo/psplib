@@ -37,6 +37,11 @@ mayor_version=$( echo $release_version | grep -Eo "(^[0-9]*)" )
 mid_version=$( echo $release_version | grep -Eo "(\.)[0-9]*(\.)" | grep -Eo "[0-9]*" )
 minor_version=$( echo $release_version | grep -Eo "([0-9]*$)" )
 
+if [ $release_version = 1.0.0 ]; then
+    run "1.0.0" "1.0.1-SNAPSHOT"
+    exit 0
+fi
+
 case $1 in
     mayor)
         mayor_version=$(( mayor_version + 1 ))
