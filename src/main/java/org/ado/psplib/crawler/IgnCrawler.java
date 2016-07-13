@@ -1,6 +1,6 @@
 package org.ado.psplib.crawler;
 
-import org.ado.psplib.Downloader;
+import org.ado.psplib.service.Downloader;
 import org.apache.commons.lang.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
