@@ -1,4 +1,4 @@
-package org.ado.psplib.service;
+package org.ado.psplib.gameloader;
 
 import com.google.gson.Gson;
 import javafx.collections.ObservableList;

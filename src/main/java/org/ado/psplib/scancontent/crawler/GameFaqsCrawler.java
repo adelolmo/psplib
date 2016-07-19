@@ -1,6 +1,5 @@
-package org.ado.psplib.crawler;
+package org.ado.psplib.scancontent.crawler;
 
-import org.ado.psplib.service.Downloader;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -32,8 +31,8 @@ public class GameFaqsCrawler implements GameCrawler {
 
     private final Downloader downloader;
 
-    public GameFaqsCrawler(Downloader downloader) {
-        this.downloader = downloader;
+    public GameFaqsCrawler() {
+        this.downloader = new Downloader();
     }
 
     @Override

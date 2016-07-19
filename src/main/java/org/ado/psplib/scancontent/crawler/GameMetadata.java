@@ -1,4 +1,4 @@
-package org.ado.psplib.crawler;
+package org.ado.psplib.scancontent.crawler;
 
 import java.net.URL;
 import java.util.Arrays;

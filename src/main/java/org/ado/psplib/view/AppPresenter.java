@@ -15,10 +15,10 @@ import javafx.stage.Stage;
 import javafx.util.Callback;
 import org.ado.psplib.common.AppConfiguration;
 import org.ado.psplib.core.GameView;
-import org.ado.psplib.service.GameLoaderService;
-import org.ado.psplib.service.InstallGameService;
-import org.ado.psplib.service.ScanContentService;
-import org.ado.psplib.service.UninstallGameService;
+import org.ado.psplib.gameloader.GameLoaderService;
+import org.ado.psplib.install.InstallGameService;
+import org.ado.psplib.scancontent.ScanContentService;
+import org.ado.psplib.uninstall.UninstallGameService;
 import org.ado.psplib.view.about.AboutPresenter;
 import org.ado.psplib.view.about.AboutView;
 import org.ado.psplib.view.settings.SettingsPresenter;
@@ -108,17 +108,12 @@ public class AppPresenter implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         gamePane.setVisible(false);
         sortComboBox.getItems().addAll(SortType.TITLE, SortType.SCORE, SortType.SIZE);
-        sortComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
-            onSearch();
-        });
-        genreComboBox.valueProperty().addListener((observable, oldValue, newValue) -> {
-            onSearch();
-        });
+        sortComboBox.valueProperty().addListener((observable, oldValue, newValue) -> onSearch());
+        genreComboBox.valueProperty().addListener((observable, oldValue, newValue) -> onSearch());
         gameLoaderService.setList(gameViewObservableList);
         gamesListView.setItems(gameViewObservableList);
-        gameLoaderService.valueProperty().addListener((observable, oldValue, newValue) -> {
-            scoreLabel.setText("Loading games...");
-        });
+        gameLoaderService.valueProperty()
+                .addListener((observable, oldValue, newValue) -> scoreLabel.setText("Loading games..."));
         gameLoaderService.setOnSucceeded(event -> {
             statusLabel.setText(String.format("%d games found.", gamesListView.getItems().size()));
             populateGenres();
@@ -187,8 +182,7 @@ public class AppPresenter implements Initializable {
 
     private void populateGenres() {
         final List<String> genres = new ArrayList<>();
-        gameViewObservableList.stream()
-                .forEach(gameView -> genres.addAll(Arrays.asList(gameView.game().genre())));
+        gameViewObservableList.forEach(gameView -> genres.addAll(Arrays.asList(gameView.game().genre())));
         final List<String> uniqueGenres = genres.stream()
                 .distinct()
                 .sorted(String::compareTo)
@@ -200,12 +194,8 @@ public class AppPresenter implements Initializable {
     public void onSearch() {
         final String libraryDir = AppConfiguration.getConfigurationProperty("lib.dir");
         final List<GameView> collect = gameViewObservableList.stream()
-                .filter(gw -> {
-                    return searchTextField.getCharacters().toString() != null ?
-                            gw.game().title().toLowerCase()
-                                    .contains(searchTextField.getCharacters().toString())
-                            : true;
-                })
+                .filter(gw -> gw.game().title().toLowerCase()
+                        .contains(searchTextField.getCharacters().toString()))
                 .filter(gameView ->
                         StringUtils.isEmpty(genreComboBox.getValue())
                                 || Arrays.asList(gameView.game().genre()).contains(genreComboBox.getValue()))
@@ -262,7 +252,6 @@ public class AppPresenter implements Initializable {
         presenter.setStage(stage, (String libraryDirectory, String pspDirectory) -> {
             gameLoaderService.setLibraryDirectory(libraryDirectory);
             gameLoaderService.restart();
-//            refresh();
         });
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.setScene(new Scene(settingsView.getView()));

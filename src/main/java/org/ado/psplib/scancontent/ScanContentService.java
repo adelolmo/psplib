@@ -1,4 +1,4 @@
-package org.ado.psplib.service;
+package org.ado.psplib.scancontent;
 
 import com.google.gson.Gson;
 import javafx.collections.ObservableList;
@@ -7,7 +7,7 @@ import javafx.concurrent.Task;
 import org.ado.psplib.Game;
 import org.ado.psplib.common.AppConfiguration;
 import org.ado.psplib.core.GameView;
-import org.ado.psplib.crawler.*;
+import org.ado.psplib.scancontent.crawler.*;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.FileFileFilter;
@@ -40,9 +40,9 @@ public class ScanContentService extends Service<File> {
 
     public ScanContentService() {
         gameCrawlers = new ArrayList<>();
-        gameCrawlers.add(new MetaCriticCrawler(new Downloader()));
-        gameCrawlers.add(new IgnCrawler(new Downloader()));
-        gameCrawlers.add(new GameFaqsCrawler(new Downloader()));
+        gameCrawlers.add(new MetaCriticCrawler());
+        gameCrawlers.add(new IgnCrawler());
+        gameCrawlers.add(new GameFaqsCrawler());
     }
 
     public void setList(ObservableList<GameView> list) {

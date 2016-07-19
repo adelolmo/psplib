@@ -1,4 +1,4 @@
-package org.ado.psplib.service;
+package org.ado.psplib.install;
 
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
@@ -15,9 +15,9 @@ import java.util.List;
  * @author Andoni del Olmo
  * @since 16.05.16
  */
-public class UninstallGameService extends Service<GameView> {
+public class InstallGameService extends Service<GameView> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(UninstallGameService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(InstallGameService.class);
 
     private List<GameView> games;
 
@@ -32,7 +32,8 @@ public class UninstallGameService extends Service<GameView> {
             protected GameView call() throws Exception {
                 for (GameView gameView : games) {
                     updateValue(gameView);
-                    FileUtils.deleteQuietly(new File(new File(AppConfiguration.getConfigurationProperty("psp.dir"), "ISO"), gameView.fileBaseName() + ".cso"));
+                    FileUtils.copyFile(new File(AppConfiguration.getConfigurationProperty("lib.dir"), gameView.fileBaseName() + ".cso"),
+                            new File(new File(AppConfiguration.getConfigurationProperty("psp.dir"), "ISO"), gameView.fileBaseName() + ".cso"));
                 }
                 return null;
             }

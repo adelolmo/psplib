@@ -1,6 +1,5 @@
-package org.ado.psplib.crawler;
+package org.ado.psplib.scancontent.crawler;
 
-import org.ado.psplib.service.Downloader;
 import org.apache.commons.lang.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -27,8 +26,8 @@ public class MetaCriticCrawler implements GameCrawler {
 
     private final Downloader downloader;
 
-    public MetaCriticCrawler(Downloader downloader) {
-        this.downloader = downloader;
+    public MetaCriticCrawler() {
+        this.downloader = new Downloader();
     }
 
     @Override

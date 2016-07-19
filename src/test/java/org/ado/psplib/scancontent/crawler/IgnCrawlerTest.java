@@ -1,6 +1,5 @@
-package org.ado.psplib.crawler;
+package org.ado.psplib.scancontent.crawler;
 
-import org.ado.psplib.service.Downloader;
 import org.junit.Test;
 
 import java.text.SimpleDateFormat;
@@ -14,7 +13,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class IgnCrawlerTest {
 
-    private final GameCrawler crawler = new IgnCrawler(new Downloader());
+    private final GameCrawler crawler = new IgnCrawler();
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd-MM-yyyy");
 
     @Test
