@@ -2,14 +2,15 @@ package org.ado.psplib.uninstall;
 
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
-import org.ado.psplib.common.AppConfiguration;
 import org.ado.psplib.core.GameView;
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.List;
+
+import static org.ado.psplib.common.AppConfiguration.getConfigurationProperty;
+import static org.apache.commons.io.FileUtils.deleteQuietly;
 
 /**
  * @author Andoni del Olmo
@@ -32,7 +33,11 @@ public class UninstallGameService extends Service<GameView> {
             protected GameView call() throws Exception {
                 for (GameView gameView : games) {
                     updateValue(gameView);
-                    FileUtils.deleteQuietly(new File(new File(AppConfiguration.getConfigurationProperty("psp.dir"), "ISO"), gameView.fileBaseName() + ".cso"));
+                    final String pspDirectoryName = getConfigurationProperty("psp.dir");
+                    final File pspIsoDirectory = new File(pspDirectoryName, "ISO");
+
+                    deleteQuietly(new File(pspIsoDirectory, gameView.fileBaseName() + ".cso"));
+                    deleteQuietly(new File(pspIsoDirectory, gameView.fileBaseName() + ".iso"));
                 }
                 return null;
             }

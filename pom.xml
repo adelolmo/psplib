@@ -72,6 +72,11 @@
                 <filtering>true</filtering>
                 <directory>${project.basedir}/src/main/resources</directory>
             </resource>
+            <resource>
+                <filtering>true</filtering>
+                <directory>src/deb</directory>
+                <targetPath>${project.build.outputDirectory}/deb</targetPath>
+            </resource>
         </resources>
 
         <pluginManagement>
@@ -160,18 +165,22 @@
                     <plugin>
                         <groupId>com.zenjava</groupId>
                         <artifactId>javafx-maven-plugin</artifactId>
-                        <version>8.5.0</version>
+                        <version>8.7.0</version>
                         <configuration>
                             <vendor>Andoni del Olmo</vendor>
                             <mainClass>${exec.mainClass}</mainClass>
                             <appName>PSP Library</appName>
+                            <verbose>true</verbose>
                             <bundler>deb</bundler>
                             <nativeReleaseVersion>${project.version}</nativeReleaseVersion>
                             <nativeOutputDir>${release.directory}</nativeOutputDir>
                             <bundleArguments>
                                 <licenseFile>License</licenseFile>
                             </bundleArguments>
-                            <additionalAppResources>${project.basedir}/src/main/deploy</additionalAppResources>
+                            <needMenu>true</needMenu>
+
+                            <deployDir>${project.build.outputDirectory}/deb</deployDir>
+                            <additionalAppResources>${project.build.outputDirectory}/deb</additionalAppResources>
                         </configuration>
                         <executions>
                             <execution>

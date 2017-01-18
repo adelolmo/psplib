@@ -13,7 +13,6 @@ import javafx.scene.layout.Pane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
-import org.ado.psplib.common.AppConfiguration;
 import org.ado.psplib.core.GameView;
 import org.ado.psplib.gameloader.GameLoaderService;
 import org.ado.psplib.install.InstallGameService;
@@ -21,6 +20,8 @@ import org.ado.psplib.scancontent.ScanContentService;
 import org.ado.psplib.uninstall.UninstallGameService;
 import org.ado.psplib.view.about.AboutPresenter;
 import org.ado.psplib.view.about.AboutView;
+import org.ado.psplib.view.error.ErrorPresenter;
+import org.ado.psplib.view.error.ErrorView;
 import org.ado.psplib.view.settings.SettingsPresenter;
 import org.ado.psplib.view.settings.SettingsView;
 import org.apache.commons.io.FileUtils;
@@ -39,6 +40,8 @@ import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.ado.psplib.common.AppConfiguration.getConfigurationProperty;
 
 /**
  * @author Andoni del Olmo
@@ -158,6 +161,8 @@ public class AppPresenter implements Initializable {
             statusLabel.setText("Game(s) installation failed!");
             refresh();
             LOGGER.error(event.getSource().exceptionProperty().getValue().toString());
+            // TODO notify error to user
+            error(((Exception) event.getSource().exceptionProperty().getValue()).getMessage());
         });
 
         uninstallGameService.valueProperty().addListener((observable, oldValue, newValue) -> {
@@ -192,7 +197,7 @@ public class AppPresenter implements Initializable {
     }
 
     public void onSearch() {
-        final String libraryDir = AppConfiguration.getConfigurationProperty("lib.dir");
+        final String libraryDir = getConfigurationProperty("lib.dir");
         final List<GameView> collect = gameViewObservableList.stream()
                 .filter(gw -> gw.game().title().toLowerCase()
                         .contains(searchTextField.getCharacters().toString()))
@@ -231,7 +236,7 @@ public class AppPresenter implements Initializable {
     }
 
     private File getPspDirectory() {
-        return new File(AppConfiguration.getConfigurationProperty("psp.dir"), "ISO");
+        return new File(getConfigurationProperty("psp.dir"), "ISO");
     }
 
     private void refreshSpaceProgressBar() {
@@ -249,13 +254,24 @@ public class AppPresenter implements Initializable {
         final Stage stage = new Stage();
         final SettingsView settingsView = new SettingsView();
         final SettingsPresenter presenter = (SettingsPresenter) settingsView.getPresenter();
-        presenter.setStage(stage, (String libraryDirectory, String pspDirectory) -> {
+        presenter.setStage(stage, (String libraryDirectory, String pspDirectory, boolean extractIso) -> {
             gameLoaderService.setLibraryDirectory(libraryDirectory);
             gameLoaderService.restart();
         });
         stage.initModality(Modality.APPLICATION_MODAL);
         stage.setScene(new Scene(settingsView.getView()));
         stage.setTitle("Settings");
+        stage.show();
+    }
+
+    public void error(String message) {
+        final Stage stage = new Stage();
+        final ErrorView errorView = new ErrorView();
+        final ErrorPresenter presenter = (ErrorPresenter) errorView.getPresenter();
+        presenter.setStage(stage, message);
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.setScene(new Scene(errorView.getView()));
+        stage.setTitle("Error");
         stage.show();
     }
 
@@ -293,7 +309,7 @@ public class AppPresenter implements Initializable {
             scoreLabel.setText(String.valueOf(gameView.game().metaScore()) + "/100");
             try {
                 final File cover =
-                        new File(AppConfiguration.getConfigurationProperty("lib.dir"), gameView.fileBaseName() + ".jpg");
+                        new File(getConfigurationProperty("lib.dir"), gameView.fileBaseName() + ".jpg");
                 if (cover.exists()) {
                     gameImageView.setImage(new Image(new FileInputStream(cover)));
                 } else {
@@ -303,13 +319,13 @@ public class AppPresenter implements Initializable {
                 LOGGER.error(e.getMessage(), e);
             }
             sizeLabel.setText(
-                    (new File(AppConfiguration.getConfigurationProperty("lib.dir"), gameView.fileBaseName() + ".cso").length() / 1024)
+                    (new File(getConfigurationProperty("lib.dir"), gameView.fileBaseName() + ".cso").length() / 1024)
                             / 1024 + " MB");
 
             final List<String> installedGames = getInstalledGames().stream()
                     .map(file -> FilenameUtils.getBaseName(file.getName()))
                     .collect(Collectors.toList());
-            if (new File(AppConfiguration.getConfigurationProperty("psp.dir")).exists()) {
+            if (new File(getConfigurationProperty("psp.dir")).exists()) {
                 if (installedGames.contains(gameView.fileBaseName())) {
                     installButton.setDisable(true);
                     uninstallButton.setDisable(false);
@@ -351,7 +367,7 @@ public class AppPresenter implements Initializable {
     private List<File> getInstalledGames() {
         if (getPspDirectory().exists()) {
             return FileUtils.listFilesAndDirs(getPspDirectory(),
-                    new WildcardFileFilter("*.cso"),
+                    new WildcardFileFilter(new String[]{"*.cso", "*.iso"}),
                     FileFileFilter.FILE).stream()
                     .sorted((i1, i2) -> i1.getName().compareTo(i2.getName()))
                     .filter(file -> !file.getAbsolutePath().equals(getPspDirectory().getAbsolutePath() + "/.cso"))

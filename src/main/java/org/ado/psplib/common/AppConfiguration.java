@@ -20,9 +20,17 @@ public class AppConfiguration {
         store();
     }
 
+    public static void setConfigurationPropertyBoolean(String property, Boolean value) {
+        setConfigurationProperty(property, value.toString());
+    }
+
     public static String getConfigurationProperty(String property) {
         init();
         return config.getProperty(property);
+    }
+
+    public static boolean getConfigurationPropertyBoolean(String property) {
+        return Boolean.valueOf(getConfigurationProperty(property));
     }
 
     private static void store() {
@@ -35,7 +43,9 @@ public class AppConfiguration {
 
     private static void init() {
         config = loadFileProperties(CONFIG, true);
-        store();
+        if (config.size() > 0) {
+            store();
+        }
     }
 
     private static Properties loadFileProperties(File file, boolean createIfNotExist) {

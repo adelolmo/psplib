@@ -25,7 +25,7 @@ public class GameFaqsCrawlerTest {
         assertEquals("company", "Sports Interactive / Sega", gameMetadata.company());
         assertEquals("releaseDate", DATE_FORMAT.parse("30-11-2012"), gameMetadata.releaseDate());
         assertEquals("image",
-                "http://img.gamefaqs.net/box/5/4/5/253545_thumb.jpg",
+                "https://gamefaqs.akamaized.net/box/5/4/5/253545_thumb.jpg",
                 gameMetadata.imageUrl().toExternalForm());
     }
 }

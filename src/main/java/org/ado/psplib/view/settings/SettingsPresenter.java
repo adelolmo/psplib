@@ -2,6 +2,7 @@ package org.ado.psplib.view.settings;
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.TextField;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
@@ -24,6 +25,9 @@ public class SettingsPresenter implements Initializable {
     @FXML
     private TextField textFieldPspDirectory;
 
+    @FXML
+    private CheckBox checkBoxExtractIso;
+
     private Stage stage;
     private SettingsEventListener listener;
     private final DirectoryChooser fileChooser = new DirectoryChooser();
@@ -37,6 +41,7 @@ public class SettingsPresenter implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         textFieldLibraryDirectory.setText(AppConfiguration.getConfigurationProperty("lib.dir"));
         textFieldPspDirectory.setText(AppConfiguration.getConfigurationProperty("psp.dir"));
+        checkBoxExtractIso.setSelected(AppConfiguration.getConfigurationPropertyBoolean("iso.extract"));
     }
 
     public void save() {
@@ -45,12 +50,19 @@ public class SettingsPresenter implements Initializable {
         AppConfiguration
                 .setConfigurationProperty("lib.dir",
                         libraryDirectory);
+
         final String pspDirectory =
                 StringUtils.defaultIfBlank(textFieldPspDirectory.getText(), "");
         AppConfiguration
                 .setConfigurationProperty("psp.dir",
                         pspDirectory);
-        listener.configurationChange(libraryDirectory, pspDirectory);
+
+        AppConfiguration
+                .setConfigurationPropertyBoolean("iso.extract",
+                        checkBoxExtractIso.isSelected());
+
+        listener.configurationChange(libraryDirectory, pspDirectory, checkBoxExtractIso.isSelected());
+        close();
     }
 
     public void close() {
@@ -81,6 +93,6 @@ public class SettingsPresenter implements Initializable {
     }
 
     public interface SettingsEventListener {
-        void configurationChange(String libraryDirectory, String pspDirectory);
+        void configurationChange(String libraryDirectory, String pspDirectory, boolean extractIso);
     }
 }
