@@ -61,7 +61,7 @@
          </children>
       </HBox>
       <ListView fx:id="gamesListView" layoutX="14.0" layoutY="69.0" onMouseClicked="#onGameClicked" prefHeight="484.0" prefWidth="345.0" />
-      <AnchorPane fx:id="gamePane" layoutX="368.0" layoutY="69.0" prefHeight="484.0" prefWidth="237.0">
+      <AnchorPane fx:id="gamePane" layoutX="368.0" layoutY="69.0" prefHeight="484.0" prefWidth="300.0">
          <children>
             <HBox layoutX="5.0" layoutY="5.0">
                <children>
@@ -125,7 +125,7 @@
                   </Label>
                </children>
             </HBox>
-            <HBox alignment="CENTER" layoutX="3.0" layoutY="444.0" prefHeight="26.0" prefWidth="232.0">
+            <HBox alignment="CENTER" layoutX="36.0" layoutY="448.0" prefHeight="26.0" prefWidth="232.0">
                <children>
                   <Button fx:id="installButton" layoutY="345.0" mnemonicParsing="false" onMouseClicked="#install" text="Install" textAlignment="CENTER" />
                   <Button fx:id="uninstallButton" layoutX="63.0" layoutY="345.0" mnemonicParsing="false" onMouseClicked="#uninstall" text="Uninstall">
@@ -135,7 +135,8 @@
                </children>
             </HBox>
             <HBox alignment="CENTER" layoutX="19.0" layoutY="81.0" />
-            <ImageView fx:id="gameImageView" fitHeight="279.0" fitWidth="200.0" layoutX="19.0" layoutY="141.0" nodeOrientation="INHERIT" pickOnBounds="true" preserveRatio="true" />
+            <ImageView fx:id="gameImageView" fitHeight="279.0" fitWidth="200.0" layoutX="51.0" layoutY="141.0" nodeOrientation="INHERIT" pickOnBounds="true" preserveRatio="true" />
+            <Separator layoutX="-3.0" layoutY="437.0" prefHeight="0.0" prefWidth="300.0" />
          </children>
       </AnchorPane>
       <HBox layoutX="14.0" layoutY="564.0">

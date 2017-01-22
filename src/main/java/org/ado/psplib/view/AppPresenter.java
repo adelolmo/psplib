@@ -41,6 +41,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static java.lang.String.format;
 import static org.ado.psplib.common.AppConfiguration.getConfigurationProperty;
 
 /**
@@ -118,7 +119,7 @@ public class AppPresenter implements Initializable {
         gameLoaderService.valueProperty()
                 .addListener((observable, oldValue, newValue) -> scoreLabel.setText("Loading games..."));
         gameLoaderService.setOnSucceeded(event -> {
-            statusLabel.setText(String.format("%d games found.", gamesListView.getItems().size()));
+            statusLabel.setText(format("%d games found.", gamesListView.getItems().size()));
             populateGenres();
             refresh();
         });
@@ -130,11 +131,11 @@ public class AppPresenter implements Initializable {
         scanContentService.setList(gameViewObservableList);
         scanContentService.valueProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
-                statusLabel.setText(String.format("Processing \"%s\" ...", newValue.getName()));
+                statusLabel.setText(format("Processing \"%s\" ...", newValue.getName()));
             }
         });
         scanContentService.setOnSucceeded(event -> {
-            statusLabel.setText(String.format("Scan new content finished. %d games available.", gameViewObservableList.size()));
+            statusLabel.setText(format("Scan new content finished. %d games available.", gameViewObservableList.size()));
             populateGenres();
             refresh();
         });
@@ -149,7 +150,7 @@ public class AppPresenter implements Initializable {
 
         installGameService.valueProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
-                statusLabel.setText(String.format("Installing \"%s\" ...", newValue.game().title()));
+                statusLabel.setText(format("Installing \"%s\" ...", newValue.game().title()));
                 refresh();
             }
         });
@@ -161,13 +162,12 @@ public class AppPresenter implements Initializable {
             statusLabel.setText("Game(s) installation failed!");
             refresh();
             LOGGER.error(event.getSource().exceptionProperty().getValue().toString());
-            // TODO notify error to user
             error(((Exception) event.getSource().exceptionProperty().getValue()).getMessage());
         });
 
         uninstallGameService.valueProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
-                statusLabel.setText(String.format("Removing \"%s\" ...", newValue.game().title()));
+                statusLabel.setText(format("Removing \"%s\" ...", newValue.game().title()));
                 refresh();
             }
         });
@@ -325,15 +325,13 @@ public class AppPresenter implements Initializable {
             final List<String> installedGames = getInstalledGames().stream()
                     .map(file -> FilenameUtils.getBaseName(file.getName()))
                     .collect(Collectors.toList());
-            if (new File(getConfigurationProperty("psp.dir")).exists()) {
-                if (installedGames.contains(gameView.fileBaseName())) {
-                    installButton.setDisable(true);
-                    uninstallButton.setDisable(false);
-                } else {
-                    installButton.setDisable(false);
-                    uninstallButton.setDisable(true);
-                }
+            if (new File(getConfigurationProperty("psp.dir")).exists()
+                    && !installedGames.contains(gameView.fileBaseName())) {
+                installButton.setText(format("Install (%d)", selectedItems.size()));
+                installButton.setDisable(false);
+                uninstallButton.setDisable(true);
             } else {
+                installButton.setText("Install");
                 installButton.setDisable(true);
                 uninstallButton.setDisable(true);
             }
@@ -369,7 +367,7 @@ public class AppPresenter implements Initializable {
             return FileUtils.listFilesAndDirs(getPspDirectory(),
                     new WildcardFileFilter(new String[]{"*.cso", "*.iso"}),
                     FileFileFilter.FILE).stream()
-                    .sorted((i1, i2) -> i1.getName().compareTo(i2.getName()))
+                    .sorted(Comparator.comparing(File::getName))
                     .filter(file -> !file.getAbsolutePath().equals(getPspDirectory().getAbsolutePath() + "/.cso"))
                     .collect(Collectors.toList());
         } else {

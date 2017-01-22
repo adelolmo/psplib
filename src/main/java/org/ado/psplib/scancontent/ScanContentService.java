@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -57,7 +58,7 @@ public class ScanContentService extends Service<File> {
                 final Gson gson = new Gson();
                 final List<File> fileList =
                         FileUtils.listFilesAndDirs(new File(AppConfiguration.getConfigurationProperty("lib.dir")),
-                                new WildcardFileFilter("*.cso"),
+                                new WildcardFileFilter(new String[]{"*.cso", "*.iso"}),
                                 FileFileFilter.FILE)
                                 .stream()
                                 .filter(file ->
@@ -65,7 +66,7 @@ public class ScanContentService extends Service<File> {
                                                 > AppConfiguration.getConfigurationProperty("lib.dir").length() + 5)
                                 .filter(file -> !new File(AppConfiguration.getConfigurationProperty("lib.dir"),
                                         FilenameUtils.getBaseName(file.getName()) + ".json").exists())
-                                .sorted((i1, i2) -> i1.getName().compareTo(i2.getName()))
+                                .sorted(Comparator.comparing(File::getName))
                                 .collect(Collectors.toList());
 
                 for (File file : fileList) {
