@@ -325,15 +325,17 @@ public class AppPresenter implements Initializable {
             final List<String> installedGames = getInstalledGames().stream()
                     .map(file -> FilenameUtils.getBaseName(file.getName()))
                     .collect(Collectors.toList());
-            if (new File(getConfigurationProperty("psp.dir")).exists()
-                    && !installedGames.contains(gameView.fileBaseName())) {
+            final boolean isInstalled = installedGames.contains(gameView.fileBaseName());
+
+            installButton.setText("Install");
+            installButton.setDisable(true);
+            uninstallButton.setDisable(true);
+
+            if (isInstalled) {
+                uninstallButton.setDisable(false);
+            } else {
                 installButton.setText(format("Install (%d)", selectedItems.size()));
                 installButton.setDisable(false);
-                uninstallButton.setDisable(true);
-            } else {
-                installButton.setText("Install");
-                installButton.setDisable(true);
-                uninstallButton.setDisable(true);
             }
         } else {
             gamePane.setVisible(false);
