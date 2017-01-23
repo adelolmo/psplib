@@ -13,6 +13,7 @@ import javafx.scene.layout.Pane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
+import org.ado.psplib.common.FileSize;
 import org.ado.psplib.core.GameView;
 import org.ado.psplib.gameloader.GameLoaderService;
 import org.ado.psplib.install.InstallGameService;
@@ -235,15 +236,16 @@ public class AppPresenter implements Initializable {
         refreshSpaceProgressBar();
     }
 
-    private File getPspDirectory() {
+    private File getPspGamesDirectory() {
         return new File(getConfigurationProperty("psp.dir"), "ISO");
     }
 
     private void refreshSpaceProgressBar() {
-        final File pspDirectory = getPspDirectory();
-        freeLabel.setText((pspDirectory.getFreeSpace() / 1024) / 1024 + " MB Free");
-        final long usedSpace = pspDirectory.getTotalSpace() - pspDirectory.getFreeSpace();
-        spaceProgressBar.setProgress(((usedSpace * 100) / (double) pspDirectory.getTotalSpace() / 100));
+        final File pspGamesDirectory = getPspGamesDirectory();
+        final long freeSpace = pspGamesDirectory.getFreeSpace();
+        freeLabel.setText(new FileSize(freeSpace).toMegaBytes() + " MB Free");
+        final long usedSpace = pspGamesDirectory.getTotalSpace() - freeSpace;
+        spaceProgressBar.setProgress(((usedSpace * 100) / (double) pspGamesDirectory.getTotalSpace() / 100));
     }
 
     public void setStage(Stage stage) {
@@ -318,9 +320,8 @@ public class AppPresenter implements Initializable {
             } catch (FileNotFoundException e) {
                 LOGGER.error(e.getMessage(), e);
             }
-            sizeLabel.setText(
-                    (new File(getConfigurationProperty("lib.dir"), gameView.fileBaseName() + ".cso").length() / 1024)
-                            / 1024 + " MB");
+            final long length = new File(getConfigurationProperty("lib.dir"), gameView.fileBaseName() + ".cso").length();
+            sizeLabel.setText(new FileSize(length).toMegaBytes() + " MB");
 
             final List<String> installedGames = getInstalledGames().stream()
                     .map(file -> FilenameUtils.getBaseName(file.getName()))
@@ -365,12 +366,12 @@ public class AppPresenter implements Initializable {
     }
 
     private List<File> getInstalledGames() {
-        if (getPspDirectory().exists()) {
-            return FileUtils.listFilesAndDirs(getPspDirectory(),
+        if (getPspGamesDirectory().exists()) {
+            return FileUtils.listFilesAndDirs(getPspGamesDirectory(),
                     new WildcardFileFilter(new String[]{"*.cso", "*.iso"}),
                     FileFileFilter.FILE).stream()
                     .sorted(Comparator.comparing(File::getName))
-                    .filter(file -> !file.getAbsolutePath().equals(getPspDirectory().getAbsolutePath() + "/.cso"))
+                    .filter(file -> !file.getAbsolutePath().equals(getPspGamesDirectory().getAbsolutePath() + "/.cso"))
                     .collect(Collectors.toList());
         } else {
             return Collections.emptyList();
