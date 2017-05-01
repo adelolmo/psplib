@@ -1,6 +1,6 @@
-package org.ado.psplib.core;
+package org.ado.psplib.view;
 
-import org.ado.psplib.Game;
+import org.ado.psplib.scancontent.Game;
 
 /**
  * @author Andoni del Olmo
@@ -9,11 +9,11 @@ import org.ado.psplib.Game;
 public class GameView {
 
     private final String fileBaseName;
-    private final Game game;
+    private final Game gameDetails;
 
     public GameView(String fileBaseName, Game game) {
         this.fileBaseName = fileBaseName;
-        this.game = game;
+        this.gameDetails = game;
     }
 
     public String fileBaseName() {
@@ -21,11 +21,11 @@ public class GameView {
     }
 
     public Game game() {
-        return game;
+        return gameDetails;
     }
 
     @Override
     public String toString() {
-        return game.title();
+        return gameDetails.title();
     }
 }

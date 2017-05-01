@@ -14,7 +14,6 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
 import org.ado.psplib.common.FileSize;
-import org.ado.psplib.core.GameView;
 import org.ado.psplib.gameloader.GameLoaderService;
 import org.ado.psplib.install.InstallGameService;
 import org.ado.psplib.scancontent.ScanContentService;

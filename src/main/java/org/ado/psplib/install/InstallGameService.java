@@ -2,7 +2,7 @@ package org.ado.psplib.install;
 
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
-import org.ado.psplib.core.GameView;
+import org.ado.psplib.view.GameView;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

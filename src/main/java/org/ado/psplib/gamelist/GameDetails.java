@@ -1,27 +1,29 @@
-package org.ado.psplib;
+package org.ado.psplib.gamelist;
 
 import java.util.Date;
 
 /**
  * @author Andoni del Olmo
- * @since 14.05.16
+ * @since 30.04.17
  */
-public class Game {
+public class GameDetails {
 
     private final String id;
     private final String title;
     private final String[] genres;
-    private final int metaScore;
+    private final int score;
     private final String company;
-    private final Date releaseDate;
+    private final Date releasedAt;
+    private final String coverUrl;
 
-    public Game(String id, String title, String[] genres, int metaScore, String company, Date releaseDate) {
+    public GameDetails(String id, String title, String[] genres, int score, String company, Date releasedAt, String coverUrl) {
         this.id = id;
         this.title = title;
         this.genres = genres;
-        this.metaScore = metaScore;
+        this.score = score;
         this.company = company;
-        this.releaseDate = releaseDate;
+        this.releasedAt = releasedAt;
+        this.coverUrl = coverUrl;
     }
 
     public String id() {
@@ -32,12 +34,12 @@ public class Game {
         return title;
     }
 
-    public String[] genre() {
+    public String[] genres() {
         return genres;
     }
 
-    public int metaScore() {
-        return metaScore;
+    public int score() {
+        return score;
     }
 
     public String company() {
@@ -45,7 +47,11 @@ public class Game {
     }
 
     public Date releaseDate() {
-        return releaseDate;
+        return releasedAt;
+    }
+
+    public String coverUrl() {
+        return coverUrl;
     }
 
     @Override

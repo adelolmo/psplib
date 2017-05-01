@@ -4,16 +4,19 @@ import com.google.gson.Gson;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
-import org.ado.psplib.Game;
 import org.ado.psplib.common.AppConfiguration;
-import org.ado.psplib.core.GameView;
-import org.ado.psplib.scancontent.crawler.*;
+import org.ado.psplib.view.GameView;
+import org.ado.psplib.gamelist.GameDetails;
+import org.ado.psplib.gamelist.GamelistApi;
+import org.ado.psplib.gamelist.GamelistDao;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.FileFileFilter;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -23,7 +26,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,15 +37,20 @@ import java.util.stream.Collectors;
 public class ScanContentService extends Service<File> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScanContentService.class);
+    private final Gson gson;
+    private final GamelistDao gamelistDao;
 
-    private List<GameCrawler> gameCrawlers;
     private ObservableList<GameView> list;
 
     public ScanContentService() {
-        gameCrawlers = new ArrayList<>();
-        gameCrawlers.add(new MetaCriticCrawler());
-        gameCrawlers.add(new IgnCrawler());
-        gameCrawlers.add(new GameFaqsCrawler());
+        gson = new Gson();
+        final Retrofit retrofit = new Retrofit.Builder()
+                .baseUrl("http://gamelist-adoorg.rhcloud.com/")
+                .addConverterFactory(GsonConverterFactory.create(gson))
+                .build();
+
+        final GamelistApi gamelistApi = retrofit.create(GamelistApi.class);
+        gamelistDao = new GamelistDao(gamelistApi);
     }
 
     public void setList(ObservableList<GameView> list) {
@@ -55,7 +62,6 @@ public class ScanContentService extends Service<File> {
         return new Task<File>() {
             @Override
             protected File call() throws Exception {
-                final Gson gson = new Gson();
                 final List<File> fileList =
                         FileUtils.listFilesAndDirs(new File(AppConfiguration.getConfigurationProperty("lib.dir")),
                                 new WildcardFileFilter(new String[]{"*.cso", "*.iso"}),
@@ -71,52 +77,42 @@ public class ScanContentService extends Service<File> {
 
                 for (File file : fileList) {
                     updateValue(file);
-                    GameMetadata gameMetadata = null;
-                    int i = 0;
                     FileWriter fileWriter = null;
                     final String baseName = FilenameUtils.getBaseName(file.getName());
-                    while (gameMetadata == null && i < gameCrawlers.size()) {
-                        try {
-                            gameMetadata = gameCrawlers.get(i).crawl(baseName);
-                            final String gameId = baseName.replaceAll("\\.", "-").replaceAll(" ", "-").toLowerCase();
-                            final Game game = new Game(gameId,
-                                    gameMetadata.title(),
-                                    gameMetadata.genres(),
-                                    gameMetadata.score(),
-                                    gameMetadata.company(),
-                                    gameMetadata.releaseDate());
+                    try {
+                        final String gameId = baseName.replaceAll("\\.", "-").replaceAll(" ", "-").toLowerCase();
+                        final GameDetails gameDetails = gamelistDao.get(gameId);
+                        final Game game = new Game(gameId,
+                                gameDetails.title(),
+                                gameDetails.genres(),
+                                gameDetails.score(),
+                                gameDetails.company(),
+                                gameDetails.releaseDate());
 
-                            fileWriter =
-                                    new FileWriter(
-                                            new File(
-                                                    AppConfiguration.getConfigurationProperty("lib.dir"),
-                                                    baseName + ".json"));
-                            gson.toJson(game, fileWriter);
+                        fileWriter =
+                                new FileWriter(
+                                        new File(
+                                                AppConfiguration.getConfigurationProperty("lib.dir"),
+                                                baseName + ".json"));
+                        gson.toJson(game, fileWriter);
 
-                            final URL url = gameMetadata.imageUrl();
-                            if (url != null) {
-                                try (InputStream in = url.openStream()) {
-                                    Files.copy(in, Paths.get(AppConfiguration.getConfigurationProperty("lib.dir"),
-                                            baseName + ".jpg"),
-                                            StandardCopyOption.REPLACE_EXISTING);
-                                }
-                            }
-
-                            list.add(new GameView(baseName, game));
-                        } catch (Exception e) {
-//                            LOGGER.warn(e.getMessage(), e);
-                        } finally {
-                            try {
-                                if (fileWriter != null) {
-                                    fileWriter.flush();
-                                }
-                            } catch (IOException ignore) {
-                            }
+                        final URL url = new URL(gameDetails.coverUrl());
+                        try (InputStream in = url.openStream()) {
+                            Files.copy(in, Paths.get(AppConfiguration.getConfigurationProperty("lib.dir"),
+                                    baseName + ".jpg"),
+                                    StandardCopyOption.REPLACE_EXISTING);
                         }
-                        i++;
-                    }
-                    if (i >= gameCrawlers.size()) {
+
+                        list.add(new GameView(baseName, game));
+                    } catch (Exception e) {
                         LOGGER.warn("Unable to get game details for \"{}\"", baseName);
+                    } finally {
+                        try {
+                            if (fileWriter != null) {
+                                fileWriter.flush();
+                            }
+                        } catch (IOException ignore) {
+                        }
                     }
                 }
                 return null;
