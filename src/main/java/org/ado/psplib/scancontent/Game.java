@@ -36,7 +36,7 @@ public class Game {
         return genres;
     }
 
-    public int metaScore() {
+    public int score() {
         return metaScore;
     }
 

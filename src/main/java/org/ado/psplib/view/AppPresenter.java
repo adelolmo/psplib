@@ -22,6 +22,8 @@ import org.ado.psplib.view.about.AboutPresenter;
 import org.ado.psplib.view.about.AboutView;
 import org.ado.psplib.view.error.ErrorPresenter;
 import org.ado.psplib.view.error.ErrorView;
+import org.ado.psplib.view.scanErrors.ScanErrorsPresenter;
+import org.ado.psplib.view.scanErrors.ScanErrorsView;
 import org.ado.psplib.view.settings.SettingsPresenter;
 import org.ado.psplib.view.settings.SettingsView;
 import org.apache.commons.io.FileUtils;
@@ -42,7 +44,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
-import static org.ado.psplib.common.AppConfiguration.getConfigurationProperty;
+import static org.ado.psplib.common.AppConfiguration.getConfiguration;
 
 /**
  * @author Andoni del Olmo
@@ -197,7 +199,7 @@ public class AppPresenter implements Initializable {
     }
 
     public void onSearch() {
-        final String libraryDir = getConfigurationProperty("lib.dir");
+        final String libraryDir = getConfiguration("lib.dir");
         final List<GameView> collect = gameViewObservableList.stream()
                 .filter(gw -> gw.game().title().toLowerCase()
                         .contains(searchTextField.getCharacters().toString()))
@@ -211,7 +213,7 @@ public class AppPresenter implements Initializable {
                             case TITLE:
                                 return gw1.game().title().compareTo(gw2.game().title());
                             case SCORE:
-                                return Integer.compare(gw2.game().metaScore(), gw1.game().metaScore());
+                                return Integer.compare(gw2.game().score(), gw1.game().score());
                             case SIZE:
                                 return Long.compare(
                                         new File(libraryDir, gw2.fileBaseName() + ".cso").length(),
@@ -236,7 +238,7 @@ public class AppPresenter implements Initializable {
     }
 
     private File getPspGamesDirectory() {
-        return new File(getConfigurationProperty("psp.dir"), "ISO");
+        return new File(getConfiguration("psp.dir"), "ISO");
     }
 
     private void refreshSpaceProgressBar() {
@@ -265,7 +267,7 @@ public class AppPresenter implements Initializable {
         stage.show();
     }
 
-    public void error(String message) {
+    private void error(String message) {
         final Stage stage = new Stage();
         final ErrorView errorView = new ErrorView();
         final ErrorPresenter presenter = (ErrorPresenter) errorView.getPresenter();
@@ -298,6 +300,17 @@ public class AppPresenter implements Initializable {
         stage.show();
     }
 
+    public void scanErrors() {
+        final Stage stage = new Stage();
+        final ScanErrorsView aboutView = new ScanErrorsView();
+        final ScanErrorsPresenter presenter = (ScanErrorsPresenter) aboutView.getPresenter();
+        presenter.setStage(stage);
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.setScene(new Scene(aboutView.getView()));
+        stage.setTitle("Scan Errors");
+        stage.show();
+    }
+
     public void onGameClicked() {
         final ObservableList<GameView> selectedItems = gamesListView.getSelectionModel().getSelectedItems();
         if (!selectedItems.isEmpty()) {
@@ -307,10 +320,10 @@ public class AppPresenter implements Initializable {
             companyLabel.setText(gameView.game().company());
             releaseDateLabel.setText(DATE_FORMAT.format(gameView.game().releaseDate()));
             genreLabel.setText(String.join(", ", (CharSequence[]) gameView.game().genre()));
-            scoreLabel.setText(String.valueOf(gameView.game().metaScore()) + "/100");
+            scoreLabel.setText(String.valueOf(gameView.game().score()) + "/100");
             try {
                 final File cover =
-                        new File(getConfigurationProperty("lib.dir"), gameView.fileBaseName() + ".jpg");
+                        new File(getConfiguration("lib.dir"), gameView.fileBaseName() + ".jpeg");
                 if (cover.exists()) {
                     gameImageView.setImage(new Image(new FileInputStream(cover)));
                 } else {
@@ -319,8 +332,14 @@ public class AppPresenter implements Initializable {
             } catch (FileNotFoundException e) {
                 LOGGER.error(e.getMessage(), e);
             }
-            final long length = new File(getConfigurationProperty("lib.dir"), gameView.fileBaseName() + ".cso").length();
-            sizeLabel.setText(new FileSize(length).toMegaBytes() + " MB");
+
+            final File isoGame = new File(getConfiguration("lib.dir"), gameView.fileBaseName() + ".iso");
+            if (isoGame.exists()) {
+                sizeLabel.setText(new FileSize(isoGame.length()).toMegaBytes() + " MB");
+            } else {
+                final File csoGame = new File(getConfiguration("lib.dir"), gameView.fileBaseName() + ".cso");
+                sizeLabel.setText(new FileSize(csoGame.length()).toMegaBytes() + " MB");
+            }
 
             final List<String> installedGames = getInstalledGames().stream()
                     .map(file -> FilenameUtils.getBaseName(file.getName()))
@@ -344,8 +363,7 @@ public class AppPresenter implements Initializable {
 
     public void install() {
         if (!installGameService.isRunning()) {
-            installGameService.setGames(gamesListView.getSelectionModel().getSelectedItems().stream()
-                    .collect(Collectors.toList()));
+            installGameService.setGames(new ArrayList<>(gamesListView.getSelectionModel().getSelectedItems()));
             installGameService.reset();
             installGameService.start();
         } else {
@@ -355,8 +373,7 @@ public class AppPresenter implements Initializable {
 
     public void uninstall() {
         if (!uninstallGameService.isRunning()) {
-            uninstallGameService.setGames(gamesListView.getSelectionModel().getSelectedItems().stream()
-                    .collect(Collectors.toList()));
+            uninstallGameService.setGames(new ArrayList<>(gamesListView.getSelectionModel().getSelectedItems()));
             uninstallGameService.reset();
             uninstallGameService.start();
         } else {

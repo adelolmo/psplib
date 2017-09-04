@@ -4,8 +4,8 @@ import com.google.gson.Gson;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
-import org.ado.psplib.scancontent.Game;
 import org.ado.psplib.common.AppConfiguration;
+import org.ado.psplib.scancontent.Game;
 import org.ado.psplib.view.GameView;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -35,7 +35,7 @@ public class GameLoaderService extends Service<GameView> {
     private String libraryDir;
 
     public GameLoaderService() {
-        libraryDir = AppConfiguration.getConfigurationProperty("lib.dir");
+        libraryDir = AppConfiguration.getConfiguration("lib.dir");
     }
 
     public void setList(ObservableList<GameView> list) {

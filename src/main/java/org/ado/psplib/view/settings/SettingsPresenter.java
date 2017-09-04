@@ -39,26 +39,26 @@ public class SettingsPresenter implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        textFieldLibraryDirectory.setText(AppConfiguration.getConfigurationProperty("lib.dir"));
-        textFieldPspDirectory.setText(AppConfiguration.getConfigurationProperty("psp.dir"));
-        checkBoxExtractIso.setSelected(AppConfiguration.getConfigurationPropertyBoolean("iso.extract"));
+        textFieldLibraryDirectory.setText(AppConfiguration.getConfiguration("lib.dir"));
+        textFieldPspDirectory.setText(AppConfiguration.getConfiguration("psp.dir"));
+        checkBoxExtractIso.setSelected(AppConfiguration.getConfigurationBoolean("iso.extract"));
     }
 
     public void save() {
         final String libraryDirectory =
                 StringUtils.defaultIfBlank(textFieldLibraryDirectory.getText(), "");
         AppConfiguration
-                .setConfigurationProperty("lib.dir",
+                .setConfiguration("lib.dir",
                         libraryDirectory);
 
         final String pspDirectory =
                 StringUtils.defaultIfBlank(textFieldPspDirectory.getText(), "");
         AppConfiguration
-                .setConfigurationProperty("psp.dir",
+                .setConfiguration("psp.dir",
                         pspDirectory);
 
         AppConfiguration
-                .setConfigurationPropertyBoolean("iso.extract",
+                .setConfigurationBoolean("iso.extract",
                         checkBoxExtractIso.isSelected());
 
         listener.configurationChange(libraryDirectory, pspDirectory, checkBoxExtractIso.isSelected());

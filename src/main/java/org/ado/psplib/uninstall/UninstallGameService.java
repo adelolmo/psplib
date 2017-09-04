@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.List;
 
-import static org.ado.psplib.common.AppConfiguration.getConfigurationProperty;
+import static org.ado.psplib.common.AppConfiguration.getConfiguration;
 import static org.apache.commons.io.FileUtils.deleteQuietly;
 
 /**
@@ -33,7 +33,7 @@ public class UninstallGameService extends Service<GameView> {
             protected GameView call() throws Exception {
                 for (GameView gameView : games) {
                     updateValue(gameView);
-                    final String pspDirectoryName = getConfigurationProperty("psp.dir");
+                    final String pspDirectoryName = getConfiguration("psp.dir");
                     final File pspIsoDirectory = new File(pspDirectoryName, "ISO");
 
                     deleteQuietly(new File(pspIsoDirectory, gameView.fileBaseName() + ".cso"));

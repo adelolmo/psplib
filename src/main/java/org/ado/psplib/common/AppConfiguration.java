@@ -14,23 +14,23 @@ public class AppConfiguration {
 
     private static Properties config;
 
-    public static void setConfigurationProperty(String property, String value) {
+    public static void setConfiguration(String property, String value) {
         init();
         config.put(property, value);
         store();
     }
 
-    public static void setConfigurationPropertyBoolean(String property, Boolean value) {
-        setConfigurationProperty(property, value.toString());
+    public static void setConfigurationBoolean(String property, Boolean value) {
+        setConfiguration(property, value.toString());
     }
 
-    public static String getConfigurationProperty(String property) {
+    public static String getConfiguration(String property) {
         init();
         return config.getProperty(property);
     }
 
-    public static boolean getConfigurationPropertyBoolean(String property) {
-        return Boolean.valueOf(getConfigurationProperty(property));
+    public static boolean getConfigurationBoolean(String property) {
+        return Boolean.valueOf(getConfiguration(property));
     }
 
     private static void store() {

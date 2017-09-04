@@ -12,8 +12,8 @@ import java.io.IOException;
 import java.util.List;
 
 import static java.lang.String.format;
-import static org.ado.psplib.common.AppConfiguration.getConfigurationProperty;
-import static org.ado.psplib.common.AppConfiguration.getConfigurationPropertyBoolean;
+import static org.ado.psplib.common.AppConfiguration.getConfiguration;
+import static org.ado.psplib.common.AppConfiguration.getConfigurationBoolean;
 import static org.apache.commons.io.FileUtils.copyFile;
 
 /**
@@ -35,9 +35,9 @@ public class InstallGameService extends Service<GameView> {
         return new Task<GameView>() {
             @Override
             protected GameView call() throws Exception {
-                final String libraryDirectoryName = getConfigurationProperty("lib.dir");
-                final String pspDirectoryName = getConfigurationProperty("psp.dir");
-                final boolean extractIso = getConfigurationPropertyBoolean("iso.extract");
+                final String libraryDirectoryName = getConfiguration("lib.dir");
+                final String pspDirectoryName = getConfiguration("psp.dir");
+                final boolean extractIso = getConfigurationBoolean("iso.extract");
                 final File pspIsoDirectory = new File(pspDirectoryName, "ISO");
                 LOGGER.info("Extract ISO: {}", extractIso);
 
@@ -47,25 +47,29 @@ public class InstallGameService extends Service<GameView> {
                     final String csoFilename = gameView.fileBaseName() + ".cso";
                     final File csoFile = new File(libraryDirectoryName, csoFilename);
                     LOGGER.info("CSO file: {}", csoFile.getAbsoluteFile());
-                    if (!csoFile.exists()) {
-                        throw new IOException(format("File not found %s.", csoFile.getAbsolutePath()));
-                    }
+
                     final String isoFilename = gameView.fileBaseName() + ".iso";
 
                     if (extractIso) {
+                        final File libIsoFile = new File(libraryDirectoryName, isoFilename);
+                        if (libIsoFile.exists()) {
+                            copyFile(libIsoFile,
+                                    new File(pspIsoDirectory, isoFilename));
+                            continue;
+                        }
+
+                        if (!csoFile.exists()) {
+                            throw new IOException(format("File not found %s.", csoFile.getAbsolutePath()));
+                        }
                         final File pspIsoFile = new File(pspIsoDirectory, isoFilename);
                         final Process extractProcess = Runtime.getRuntime()
                                 .exec(new String[]{"/usr/bin/ciso", "0",
                                         csoFile.getAbsolutePath(),
                                         pspIsoFile.getAbsolutePath()}
                                 );
-
                         try {
                             final int statusCode = extractProcess.waitFor();
                             final String input = IOUtils.toString(extractProcess.getInputStream());
-//                            final String error = IOUtils.toString(extractProcess.getErrorStream());
-//                            LOGGER.debug(input);
-//                            LOGGER.debug((error);
                             if (statusCode > 0 || input.startsWith("Usage")) {
                                 LOGGER.error("Unable to extract CSO file into ISO. Cause: " + input);
                                 throw new IOException(format("Unable to extract CSO file %s into ISO.", csoFile.getAbsolutePath()));
@@ -75,6 +79,9 @@ public class InstallGameService extends Service<GameView> {
                         }
 
                     } else {
+                        if (!csoFile.exists()) {
+                            throw new IOException(format("File not found %s.", csoFile.getAbsolutePath()));
+                        }
                         copyFile(csoFile,
                                 new File(pspIsoDirectory, csoFilename));
                     }
