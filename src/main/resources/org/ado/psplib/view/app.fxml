@@ -16,6 +16,12 @@
                 <MenuItem mnemonicParsing="false" onAction="#exit" text="Exit" />
             </items>
           </Menu>
+            <Menu mnemonicParsing="false" text="View">
+                <items>
+                    <MenuItem mnemonicParsing="false" onAction="#myGames" text="My games"/>
+                    <MenuItem mnemonicParsing="false" onAction="#allGames" text="All games"/>
+                </items>
+            </Menu>
           <Menu mnemonicParsing="false" text="Help">
             <items>
               <MenuItem mnemonicParsing="false" onAction="#about" text="About" />
@@ -45,7 +51,7 @@
             <ComboBox fx:id="genreComboBox" prefWidth="150.0" />
          </children>
       </HBox>
-      <ListView fx:id="gamesListView" layoutX="14.0" layoutY="69.0" onMouseClicked="#onGameClicked" prefHeight="484.0" prefWidth="345.0" />
+       <ListView layoutX="14.0" layoutY="69.0" prefHeight="484.0" prefWidth="345.0" fx:id="gamesListView"/>
       <AnchorPane fx:id="gamePane" layoutX="368.0" layoutY="69.0" prefHeight="484.0" prefWidth="300.0">
          <children>
             <HBox layoutX="5.0" layoutY="5.0">

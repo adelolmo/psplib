@@ -42,22 +42,16 @@ public class AppConfiguration {
     }
 
     private static void init() {
-        config = loadFileProperties(CONFIG, true);
+        config = loadFileProperties(CONFIG);
         if (config.size() > 0) {
             store();
         }
     }
 
-    private static Properties loadFileProperties(File file, boolean createIfNotExist) {
+    private static Properties loadFileProperties(File file) {
         final Properties prop = new Properties();
         try {
-            if (!file.exists()) {
-                if (createIfNotExist) {
-                    FileUtils.touch(file);
-                } else {
-                    throw new IOException(String.format("Properties file \"%s\" does not exits.", file.getAbsolutePath()));
-                }
-            }
+            FileUtils.touch(file);
             prop.load(new FileInputStream(file));
         } catch (IOException e) {
             throw new IllegalStateException("Cannot read application configuration file", e);

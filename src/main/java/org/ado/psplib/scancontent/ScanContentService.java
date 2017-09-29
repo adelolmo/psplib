@@ -1,11 +1,11 @@
 package org.ado.psplib.scancontent;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import org.ado.psplib.common.AppConfiguration;
-import org.ado.psplib.gamelist.GameDetails;
 import org.ado.psplib.view.GameView;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -31,11 +31,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static java.lang.String.format;
+
 /**
  * @author Andoni del Olmo
  * @since 14.05.16
  */
-public class ScanContentService extends Service<File> {
+public class ScanContentService extends Service<Void> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScanContentService.class);
     private final Gson gson;
@@ -43,7 +45,7 @@ public class ScanContentService extends Service<File> {
     private ObservableList<GameView> list;
 
     public ScanContentService() {
-        gson = new Gson();
+        gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
     }
 
     public void setList(ObservableList<GameView> list) {
@@ -51,10 +53,10 @@ public class ScanContentService extends Service<File> {
     }
 
     @Override
-    protected Task<File> createTask() {
-        return new Task<File>() {
+    protected Task<Void> createTask() {
+        return new Task<Void>() {
             @Override
-            protected File call() throws Exception {
+            protected Void call() throws Exception {
                 final String libDir = AppConfiguration.getConfiguration("lib.dir");
 
                 final List<File> fileList =
@@ -74,10 +76,10 @@ public class ScanContentService extends Service<File> {
                         CSVParser.parse(ScanContentService.class.getResource("games.csv"),
                                 Charset.forName("UTF-8"),
                                 CSVFormat.newFormat(';').withFirstRecordAsHeader());
-                final Map<String, GameDetails> games = new HashMap<>();
+                final Map<String, Game> games = new HashMap<>();
                 csv.iterator().forEachRemaining(strings ->
                         games.put(strings.get("id"),
-                                GameDetails.of(strings.get("id"),
+                                Game.of(strings.get("id"),
                                         strings.get("title"),
                                         strings.get("genres"),
                                         strings.get("company"),
@@ -86,29 +88,21 @@ public class ScanContentService extends Service<File> {
                                         ScanContentService.class.getResource(strings.get("id") + ".jpeg"))));
 
                 for (final File file : fileList) {
-                    updateValue(file);
+                    updateMessage(format("Processing \"%s\" ...", file.getName()));
                     FileWriter fileWriter = null;
                     final String baseName = FilenameUtils.getBaseName(file.getName());
                     try {
                         final String gameId = GameIdGenerator.toId(baseName);
-                        final GameDetails gameDetails = games.get(gameId);
-                        if (gameDetails == null) {
+                        final Game game = games.get(gameId);
+                        if (game == null) {
                             LOGGER.warn("Unable to get game details for \"{}\"", baseName);
                             continue;
                         }
 
-                        final Game game = new Game(
-                                gameId,
-                                gameDetails.title(),
-                                gameDetails.genres(),
-                                gameDetails.score(),
-                                gameDetails.company(),
-                                gameDetails.releaseDate());
-
                         fileWriter = new FileWriter(new File(libDir, baseName + ".json"));
                         gson.toJson(game, fileWriter);
 
-                        final URL url = gameDetails.coverUrl();
+                        final URL url = game.cover();
                         if (url == null) {
                             continue;
                         }

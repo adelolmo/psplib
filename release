@@ -26,7 +26,7 @@ run(){
 	git commit -a -m "prepare to develop v.$2"
 	echo "> Pushing origin/master ..."
 	git push origin master
-    git branch --set-upstream master origin/master
+    git branch --set-upstream-to origin/master
 
 	# cleanup
 	find -name "*.versionsBackup"| xargs -I file rm file

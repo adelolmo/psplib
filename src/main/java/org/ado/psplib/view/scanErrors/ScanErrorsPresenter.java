@@ -36,6 +36,7 @@ public class ScanErrorsPresenter implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         final String libraryDirectory = AppConfiguration.getConfiguration("lib.dir");
 
+        list.setEditable(false);
         FileUtils.listFilesAndDirs(new File(libraryDirectory),
                 new WildcardFileFilter(new String[]{CSO_WILDCARD, ISO_WILDCARD}),
                 FileFileFilter.FILE)
@@ -48,6 +49,7 @@ public class ScanErrorsPresenter implements Initializable {
                 .sorted(Comparator.comparing(File::getName))
                 .collect(Collectors.toList())
                 .forEach(file -> list.appendText(file.getName() + "\n"));
+        list.setScrollTop(Double.MIN_VALUE);
     }
 
     public void close() {

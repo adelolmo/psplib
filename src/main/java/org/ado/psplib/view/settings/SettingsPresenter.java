@@ -47,19 +47,13 @@ public class SettingsPresenter implements Initializable {
     public void save() {
         final String libraryDirectory =
                 StringUtils.defaultIfBlank(textFieldLibraryDirectory.getText(), "");
-        AppConfiguration
-                .setConfiguration("lib.dir",
-                        libraryDirectory);
+        AppConfiguration.setConfiguration("lib.dir", libraryDirectory);
 
         final String pspDirectory =
                 StringUtils.defaultIfBlank(textFieldPspDirectory.getText(), "");
-        AppConfiguration
-                .setConfiguration("psp.dir",
-                        pspDirectory);
+        AppConfiguration.setConfiguration("psp.dir", pspDirectory);
 
-        AppConfiguration
-                .setConfigurationBoolean("iso.extract",
-                        checkBoxExtractIso.isSelected());
+        AppConfiguration.setConfigurationBoolean("iso.extract", checkBoxExtractIso.isSelected());
 
         listener.configurationChange(libraryDirectory, pspDirectory, checkBoxExtractIso.isSelected());
         close();
