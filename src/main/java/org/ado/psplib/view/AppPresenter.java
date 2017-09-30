@@ -355,7 +355,7 @@ public class AppPresenter implements Initializable {
                 releaseDateLabel.setText(DATE_FORMAT.format(gameView.game().releaseDate()));
                 genreLabel.setText(String.join(", ", (CharSequence[]) gameView.game().genres()));
                 scoreLabel.setText(String.valueOf(gameView.game().score()) + "/100");
-                loadGameImage(gameView);
+                loadGameImage(gameView.game().cover());
 
             } else {
                 gamePane.setVisible(false);
@@ -374,7 +374,7 @@ public class AppPresenter implements Initializable {
                 releaseDateLabel.setText(DATE_FORMAT.format(gameView.game().releaseDate()));
                 genreLabel.setText(String.join(", ", (CharSequence[]) gameView.game().genres()));
                 scoreLabel.setText(String.valueOf(gameView.game().score()) + "/100");
-                loadGameImage(gameView);
+                loadGameImage(gameView.game().cover());
 
                 final File csoGame = new File(getConfiguration("lib.dir"), gameView.fileBaseName() + ".cso");
                 sizeLabel.setText(new FileSize(csoGame.length()).toMegaBytes() + " MB");
@@ -424,9 +424,8 @@ public class AppPresenter implements Initializable {
         }
     }
 
-    private void loadGameImage(final GameView gameView) {
+    private void loadGameImage(URL cover) {
         try {
-            final URL cover = gameView.game().cover();
             gameImageView.setImage(null);
             if (cover != null) {
                 gameImageView.setImage(new Image(cover.openStream()));
