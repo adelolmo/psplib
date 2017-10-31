@@ -184,7 +184,7 @@
                         <configuration>
                             <vendor>Andoni del Olmo</vendor>
                             <mainClass>${exec.mainClass}</mainClass>
-                            <appName>PSP Library</appName>
+                            <appName>${project.artifactId}</appName>
                             <verbose>true</verbose>
                             <bundler>deb</bundler>
                             <nativeReleaseVersion>${project.version}</nativeReleaseVersion>
