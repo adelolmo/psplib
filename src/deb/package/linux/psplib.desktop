@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=PSP Library
+Comment=Organize your PSP games library and connect it with your PSP console
+Exec=/opt/psplib/psplib
+Icon=/opt/psplib/psplib.png
+Terminal=false
+Type=Application
+Categories=Game
+Keywords=library;PSP;PlayStation;Portable;Sony;

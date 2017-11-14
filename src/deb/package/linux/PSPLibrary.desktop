@@ -1,8 +1,0 @@
-[Desktop Entry]
-Name=PSP Library
-Comment=PSP Library
-Exec=/opt/PSPLibrary/PSPLibrary
-Icon=/opt/PSPLibrary/PSPLibrary.png
-Terminal=false
-Type=Application
-Categories=Utility;Application;

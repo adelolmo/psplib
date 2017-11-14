@@ -1,11 +1,10 @@
 Format: http://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: psp-library
-Source: https://github.com/adelolmo/psplib
 
 Files: *
-Copyright: Copyright 2017 Andoni del Olmo <andoni.delolmo@gmail.com>
+Copyright: 2017 Andoni del Olmo <andoni.delolmo@gmail.com>
 License: Apache-2.0
- Copyright 2017 Andoni del Olmo
+ Copyright 2016 Andoni del Olmo
 
  Licensed under the Apache License, Version 2.0 (the "License");
  you may not use this file except in compliance with the License.
