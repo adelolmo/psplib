@@ -6,5 +6,4 @@ Priority: optional
 Architecture: amd64
 Depends: ciso
 Provides: psp-library
-Description: PSP Library
-    Organize your PSP games library and connect it with your PSP console.
+Description: Organize your PSP games library and connect it with your PSP console
