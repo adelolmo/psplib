@@ -342,11 +342,15 @@ public class AppPresenter implements Initializable {
     }
 
     public void allGames() {
+        installButton.setText("Install");
+        installButton.setDisable(true);
+        uninstallButton.setDisable(true);
         gamePane.setVisible(false);
         statusLabel.setText("");
         gameViewObservableList.setAll(fullGameList);
         gamesListView.setOnMouseClicked(event -> {
             final ObservableList<GameView> selectedItems = gamesListView.getSelectionModel().getSelectedItems();
+            gamePane.setVisible(false);
             if (!selectedItems.isEmpty()) {
                 gamePane.setVisible(true);
 
@@ -356,9 +360,6 @@ public class AppPresenter implements Initializable {
                 genreLabel.setText(String.join(", ", (CharSequence[]) gameView.game().genres()));
                 scoreLabel.setText(String.valueOf(gameView.game().score()) + "/100");
                 loadGameImage(gameView.game().cover());
-
-            } else {
-                gamePane.setVisible(false);
             }
         });
     }
@@ -395,7 +396,10 @@ public class AppPresenter implements Initializable {
                 if (isInstalled) {
                     uninstallButton.setDisable(false);
                 } else {
-                    installButton.setText(format("Install (%d)", selectedItems.size()));
+                    installButton.setText("Install");
+                    if (selectedItems.size() > 1) {
+                        installButton.setText(format("Install (%d)", selectedItems.size()));
+                    }
                     installButton.setDisable(false);
                 }
             } else {

@@ -48,7 +48,7 @@ public class GameLoaderService extends Service<List<GameView>> {
     protected Task<List<GameView>> createTask() {
         return new Task<List<GameView>>() {
             @Override
-            protected List<GameView> call() throws Exception {
+            protected List<GameView> call() {
                 final List<GameView> list = new ArrayList<>();
 
                 if (libraryDir != null && new File(libraryDir).exists()) {

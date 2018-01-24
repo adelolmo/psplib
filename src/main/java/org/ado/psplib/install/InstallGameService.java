@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import static java.lang.String.format;
@@ -69,7 +70,7 @@ public class InstallGameService extends Service<GameView> {
                                 );
                         try {
                             final int statusCode = extractProcess.waitFor();
-                            final String input = IOUtils.toString(extractProcess.getInputStream());
+                            final String input = IOUtils.toString(extractProcess.getInputStream(), StandardCharsets.UTF_8);
                             if (statusCode > 0 || input.startsWith("Usage")) {
                                 LOGGER.error("Unable to extract CSO file into ISO. Cause: " + input);
                                 throw new IOException(format("Unable to extract CSO file %s into ISO.", csoFile.getAbsolutePath()));
