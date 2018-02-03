@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 import static org.ado.psplib.common.AppConfiguration.getConfiguration;
+import static org.ado.psplib.common.FileNameCleaner.cleanFileName;
 
 /**
  * @author Andoni del Olmo
@@ -185,7 +186,7 @@ public class AppPresenter implements Initializable {
         installGameService.setOnFailed(event -> {
             statusLabel.setText("Game(s) installation failed!");
             refresh();
-            LOGGER.error(event.getSource().exceptionProperty().getValue().toString());
+            LOGGER.error("Game installation failed.", event.getSource().exceptionProperty().getValue());
             error(((Exception) event.getSource().exceptionProperty().getValue()).getMessage());
         });
 
@@ -464,7 +465,7 @@ public class AppPresenter implements Initializable {
                 getStyleClass().remove("gameInstalled");
                 if (!empty) {
                     Platform.runLater(() -> setText(gameView.game().title()));
-                    if (installedGames.contains(gameView.fileBaseName())) {
+                    if (installedGames.contains(cleanFileName(gameView.fileBaseName()))) {
                         getStyleClass().add("gameInstalled");
                     }
                 }

@@ -15,6 +15,7 @@ import java.util.List;
 import static java.lang.String.format;
 import static org.ado.psplib.common.AppConfiguration.getConfiguration;
 import static org.ado.psplib.common.AppConfiguration.getConfigurationBoolean;
+import static org.ado.psplib.common.FileNameCleaner.cleanFileName;
 import static org.apache.commons.io.FileUtils.copyFile;
 
 /**
@@ -50,19 +51,24 @@ public class InstallGameService extends Service<GameView> {
                     LOGGER.info("CSO file: {}", csoFile.getAbsoluteFile());
 
                     final String isoFilename = gameView.fileBaseName() + ".iso";
+                    final File libIsoFile = new File(libraryDirectoryName, isoFilename);
+                    final File pspIsoFile = new File(pspIsoDirectory, cleanFileName(isoFilename));
 
                     if (extractIso) {
-                        final File libIsoFile = new File(libraryDirectoryName, isoFilename);
                         if (libIsoFile.exists()) {
-                            copyFile(libIsoFile,
-                                    new File(pspIsoDirectory, isoFilename));
+                            try {
+                                copyFile(libIsoFile,
+                                        pspIsoFile);
+                            } catch (IOException e) {
+                                throw new IOException(format("Cannot copy file %s to %s.",
+                                        libIsoFile.getAbsolutePath(), pspIsoFile.getAbsolutePath()), e);
+                            }
                             continue;
                         }
 
                         if (!csoFile.exists()) {
                             throw new IOException(format("File not found %s.", csoFile.getAbsolutePath()));
                         }
-                        final File pspIsoFile = new File(pspIsoDirectory, isoFilename);
                         final Process extractProcess = Runtime.getRuntime()
                                 .exec(new String[]{"/usr/bin/ciso", "0",
                                         csoFile.getAbsolutePath(),
