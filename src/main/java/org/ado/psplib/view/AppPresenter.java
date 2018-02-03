@@ -31,11 +31,8 @@ import org.ado.psplib.view.settings.SettingsPresenter;
 import org.ado.psplib.view.settings.SettingsView;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.FileFileFilter;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,12 +42,21 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.ResourceBundle;
 
-import static java.lang.String.format;
+import static java.lang.String.*;
+import static java.util.Arrays.asList;
+import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.toList;
+import static javafx.collections.FXCollections.observableList;
 import static org.ado.psplib.common.AppConfiguration.getConfiguration;
 import static org.ado.psplib.common.FileNameCleaner.cleanFileName;
+import static org.apache.commons.io.FileUtils.listFilesAndDirs;
+import static org.apache.commons.io.FilenameUtils.getBaseName;
+import static org.apache.commons.lang.StringUtils.isEmpty;
 
 /**
  * @author Andoni del Olmo
@@ -143,7 +149,7 @@ public class AppPresenter implements Initializable {
                                             strings.get("released_at"),
                                             ScanContentService.class.getResource(strings.get("id") + ".jpeg")))));
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.error("Cannot parse games csv file", e);
         }
 
         gameLoaderService.setOnSucceeded(event -> {
@@ -212,13 +218,13 @@ public class AppPresenter implements Initializable {
 
     private void populateGenres() {
         final List<String> genres = new ArrayList<>();
-        gameViewObservableList.forEach(gameView -> genres.addAll(Arrays.asList(gameView.game().genres())));
+        gameViewObservableList.forEach(gameView -> genres.addAll(asList(gameView.game().genres())));
         final List<String> uniqueGenres = genres.stream()
                 .distinct()
                 .sorted(String::compareTo)
-                .collect(Collectors.toList());
+                .collect(toList());
         uniqueGenres.add(0, "");
-        genreComboBox.setItems(FXCollections.observableList(uniqueGenres));
+        genreComboBox.setItems(observableList(uniqueGenres));
     }
 
     public void onSearch() {
@@ -227,8 +233,8 @@ public class AppPresenter implements Initializable {
                 .filter(gameView -> gameView.game().title().toLowerCase()
                         .contains(searchTextField.getCharacters().toString()))
                 .filter(gameView ->
-                        StringUtils.isEmpty(genreComboBox.getValue())
-                                || Arrays.asList(gameView.game().genres()).contains(genreComboBox.getValue()))
+                        isEmpty(genreComboBox.getValue())
+                                || asList(gameView.game().genres()).contains(genreComboBox.getValue()))
                 .sorted(((gw1, gw2) -> {
                     final SortType sortType = sortComboBox.getValue();
                     if (sortType != null) {
@@ -247,9 +253,9 @@ public class AppPresenter implements Initializable {
                     } else {
                         return 1;
                     }
-                })).collect(Collectors.toList());
+                })).collect(toList());
 
-        gamesListView.setItems(FXCollections.observableList(collect));
+        gamesListView.setItems(observableList(collect));
 
         refresh();
     }
@@ -358,8 +364,8 @@ public class AppPresenter implements Initializable {
                 final GameView gameView = selectedItems.get(0);
                 companyLabel.setText(gameView.game().company());
                 releaseDateLabel.setText(DATE_FORMAT.format(gameView.game().releaseDate()));
-                genreLabel.setText(String.join(", ", (CharSequence[]) gameView.game().genres()));
-                scoreLabel.setText(String.valueOf(gameView.game().score()) + "/100");
+                genreLabel.setText(join(", ", (CharSequence[]) gameView.game().genres()));
+                scoreLabel.setText(valueOf(gameView.game().score()) + "/100");
                 loadGameImage(gameView.game().cover());
             }
         });
@@ -374,8 +380,8 @@ public class AppPresenter implements Initializable {
                 final GameView gameView = selectedItems.get(0);
                 companyLabel.setText(gameView.game().company());
                 releaseDateLabel.setText(DATE_FORMAT.format(gameView.game().releaseDate()));
-                genreLabel.setText(String.join(", ", (CharSequence[]) gameView.game().genres()));
-                scoreLabel.setText(String.valueOf(gameView.game().score()) + "/100");
+                genreLabel.setText(join(", ", (CharSequence[]) gameView.game().genres()));
+                scoreLabel.setText(valueOf(gameView.game().score()) + "/100");
                 loadGameImage(gameView.game().cover());
 
                 final File csoGame = new File(getConfiguration("lib.dir"), gameView.fileBaseName() + ".cso");
@@ -386,8 +392,8 @@ public class AppPresenter implements Initializable {
                 }
 
                 final boolean isInstalled = AppPresenter.this.getInstalledGames().stream()
-                        .map(file -> FilenameUtils.getBaseName(file.getName()))
-                        .collect(Collectors.toList())
+                        .map(file -> getBaseName(file.getName()))
+                        .collect(toList())
                         .contains(gameView.fileBaseName());
 
                 installButton.setText("Install");
@@ -443,12 +449,12 @@ public class AppPresenter implements Initializable {
 
     private List<File> getInstalledGames() {
         if (getPspGamesDirectory().exists()) {
-            return FileUtils.listFilesAndDirs(getPspGamesDirectory(),
+            return listFilesAndDirs(getPspGamesDirectory(),
                     new WildcardFileFilter(new String[]{"*.cso", "*.iso"}),
                     FileFileFilter.FILE).stream()
-                    .sorted(Comparator.comparing(File::getName))
+                    .sorted(comparing(File::getName))
                     .filter(file -> !file.getAbsolutePath().equals(getPspGamesDirectory().getAbsolutePath() + "/.cso"))
-                    .collect(Collectors.toList());
+                    .collect(toList());
         } else {
             return Collections.emptyList();
         }
@@ -456,8 +462,8 @@ public class AppPresenter implements Initializable {
 
     private Callback<ListView<GameView>, ListCell<GameView>> getHighlightCellFactory() {
         final List<String> installedGames = getInstalledGames().stream()
-                .map(file -> FilenameUtils.getBaseName(file.getName()))
-                .collect(Collectors.toList());
+                .map(file -> getBaseName(file.getName()))
+                .collect(toList());
         return param -> new ListCell<GameView>() {
             @Override
             protected void updateItem(GameView gameView, boolean empty) {
