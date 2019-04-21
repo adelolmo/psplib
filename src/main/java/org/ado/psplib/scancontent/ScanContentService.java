@@ -1,7 +1,6 @@
 package org.ado.psplib.scancontent;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
@@ -10,7 +9,6 @@ import org.ado.psplib.view.GameView;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.FileFileFilter;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.slf4j.Logger;
@@ -23,8 +21,8 @@ import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -32,6 +30,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static org.apache.commons.io.FilenameUtils.getBaseName;
 
 /**
  * @author Andoni del Olmo
@@ -44,8 +44,8 @@ public class ScanContentService extends Service<Void> {
 
     private ObservableList<GameView> list;
 
-    public ScanContentService() {
-        gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+    public ScanContentService(Gson gson) {
+        this.gson = gson;
     }
 
     public void setList(ObservableList<GameView> list) {
@@ -68,7 +68,7 @@ public class ScanContentService extends Service<Void> {
                                         file.getAbsolutePath().length()
                                                 > libDir.length() + 5)
                                 .filter(file -> !new File(libDir,
-                                        FilenameUtils.getBaseName(file.getName()) + ".json").exists())
+                                        getBaseName(file.getName()) + ".json").exists())
                                 .sorted(Comparator.comparing(File::getName))
                                 .collect(Collectors.toList());
 
@@ -90,7 +90,7 @@ public class ScanContentService extends Service<Void> {
                 for (final File file : fileList) {
                     updateMessage(format("Processing \"%s\" ...", file.getName()));
                     FileWriter fileWriter = null;
-                    final String baseName = FilenameUtils.getBaseName(file.getName());
+                    final String baseName = getBaseName(file.getName());
                     try {
                         final String gameId = GameIdGenerator.toId(baseName);
                         final Game game = games.get(gameId);
@@ -107,9 +107,8 @@ public class ScanContentService extends Service<Void> {
                             continue;
                         }
                         try (InputStream in = url.openStream()) {
-                            Files.copy(in, Paths.get(libDir,
-                                    baseName + ".jpeg"),
-                                    StandardCopyOption.REPLACE_EXISTING);
+                            final Path target = Paths.get(libDir, baseName + ".jpeg");
+                            Files.copy(in, target, REPLACE_EXISTING);
                         }
 
                         list.add(new GameView(baseName, game));

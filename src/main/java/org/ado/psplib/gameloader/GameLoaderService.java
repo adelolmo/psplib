@@ -1,15 +1,11 @@
 package org.ado.psplib.gameloader;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
-import org.ado.psplib.common.AppConfiguration;
 import org.ado.psplib.scancontent.Game;
 import org.ado.psplib.scancontent.ScanContentService;
 import org.ado.psplib.view.GameView;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.FileFileFilter;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.slf4j.Logger;
@@ -23,6 +19,9 @@ import java.util.Comparator;
 import java.util.List;
 
 import static java.lang.String.format;
+import static org.ado.psplib.common.AppConfiguration.getConfiguration;
+import static org.apache.commons.io.FileUtils.listFilesAndDirs;
+import static org.apache.commons.io.FilenameUtils.getBaseName;
 
 /**
  * @author Andoni del Olmo
@@ -35,9 +34,9 @@ public class GameLoaderService extends Service<List<GameView>> {
     private final Gson gson;
     private String libraryDir;
 
-    public GameLoaderService() {
-        gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
-        libraryDir = AppConfiguration.getConfiguration("lib.dir");
+    public GameLoaderService(Gson gson) {
+        this.gson = gson;
+        libraryDir = getConfiguration("lib.dir");
     }
 
     public void setLibraryDirectory(String libraryDirectory) {
@@ -52,7 +51,7 @@ public class GameLoaderService extends Service<List<GameView>> {
                 final List<GameView> list = new ArrayList<>();
 
                 if (libraryDir != null && new File(libraryDir).exists()) {
-                    FileUtils.listFilesAndDirs(new File(libraryDir),
+                    listFilesAndDirs(new File(libraryDir),
                             new WildcardFileFilter("*.json"),
                             FileFileFilter.FILE)
                             .stream()
@@ -60,7 +59,7 @@ public class GameLoaderService extends Service<List<GameView>> {
                             .forEach(file -> {
                                 try {
                                     final Game game = gson.fromJson(new FileReader(file), Game.class);
-                                    list.add(new GameView(FilenameUtils.getBaseName(file.getName()),
+                                    list.add(new GameView(getBaseName(file.getName()),
                                             new Game(game.id(),
                                                     game.title(),
                                                     game.genres(),

@@ -15,7 +15,7 @@ import java.util.List;
 import static java.lang.String.format;
 import static org.ado.psplib.common.AppConfiguration.getConfiguration;
 import static org.ado.psplib.common.AppConfiguration.getConfigurationBoolean;
-import static org.ado.psplib.common.FileNameCleaner.cleanFileName;
+import static org.ado.psplib.common.FilenameUtils.clean;
 import static org.apache.commons.io.FileUtils.copyFile;
 
 /**
@@ -52,7 +52,7 @@ public class InstallGameService extends Service<GameView> {
 
                     final String isoFilename = gameView.fileBaseName() + ".iso";
                     final File libIsoFile = new File(libraryDirectoryName, isoFilename);
-                    final File pspIsoFile = new File(pspIsoDirectory, cleanFileName(isoFilename));
+                    final File pspIsoFile = new File(pspIsoDirectory, clean(isoFilename));
 
                     if (extractIso) {
                         if (libIsoFile.exists()) {

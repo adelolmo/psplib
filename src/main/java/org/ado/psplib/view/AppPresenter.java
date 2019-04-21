@@ -1,5 +1,7 @@
 package org.ado.psplib.view;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -7,7 +9,14 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
+import javafx.scene.control.ListView;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
@@ -31,31 +40,33 @@ import org.ado.psplib.view.settings.SettingsPresenter;
 import org.ado.psplib.view.settings.SettingsView;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
-import org.apache.commons.io.filefilter.FileFileFilter;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.ResourceBundle;
 
-import static java.lang.String.*;
+import static java.lang.String.format;
+import static java.lang.String.join;
+import static java.lang.String.valueOf;
 import static java.util.Arrays.asList;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
 import static javafx.collections.FXCollections.observableList;
 import static org.ado.psplib.common.AppConfiguration.getConfiguration;
-import static org.ado.psplib.common.FileNameCleaner.cleanFileName;
+import static org.ado.psplib.common.FilenameUtils.clean;
 import static org.apache.commons.io.FileUtils.listFilesAndDirs;
 import static org.apache.commons.io.FilenameUtils.getBaseName;
+import static org.apache.commons.io.filefilter.FileFileFilter.FILE;
 import static org.apache.commons.lang.StringUtils.isEmpty;
 
 /**
@@ -67,14 +78,10 @@ public class AppPresenter implements Initializable {
     private static final Logger LOGGER = LoggerFactory.getLogger(AppPresenter.class);
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yyyy");
 
-    @Inject
-    private ScanContentService scanContentService;
-    @Inject
-    private InstallGameService installGameService;
-    @Inject
-    private UninstallGameService uninstallGameService;
-    @Inject
-    private GameLoaderService gameLoaderService;
+    private final ScanContentService scanContentService;
+    private final InstallGameService installGameService;
+    private final UninstallGameService uninstallGameService;
+    private final GameLoaderService gameLoaderService;
 
     private Stage stage;
 
@@ -122,6 +129,15 @@ public class AppPresenter implements Initializable {
 
     private final ObservableList<GameView> gameViewObservableList = FXCollections.observableArrayList();
     private final List<GameView> fullGameList = new ArrayList<>();
+    private final List<GameView> gameViews = new ArrayList<>();
+
+    public AppPresenter() {
+        final Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
+        gameLoaderService = new GameLoaderService(gson);
+        scanContentService = new ScanContentService(gson);
+        installGameService = new InstallGameService();
+        uninstallGameService = new UninstallGameService();
+    }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -134,26 +150,29 @@ public class AppPresenter implements Initializable {
         final CSVParser csv;
         try {
             csv = CSVParser.parse(ScanContentService.class.getResource("games.csv"),
-                    Charset.forName("UTF-8"),
+                    Charset.forName(StandardCharsets.UTF_8.name()),
                     CSVFormat.newFormat(';').withFirstRecordAsHeader());
 
 
-            csv.iterator().forEachRemaining(strings ->
+            csv.iterator().forEachRemaining(csvRecord ->
                     fullGameList.add(
                             new GameView("",
-                                    Game.of(strings.get("id"),
-                                            strings.get("title"),
-                                            strings.get("genres"),
-                                            strings.get("company"),
-                                            strings.get("score"),
-                                            strings.get("released_at"),
-                                            ScanContentService.class.getResource(strings.get("id") + ".jpeg")))));
+                                    Game.of(csvRecord.get("id"),
+                                            csvRecord.get("title"),
+                                            csvRecord.get("genres"),
+                                            csvRecord.get("company"),
+                                            csvRecord.get("score"),
+                                            csvRecord.get("released_at"),
+                                            ScanContentService.class.getResource(csvRecord.get("id") + ".jpeg")))));
         } catch (IOException e) {
             LOGGER.error("Cannot parse games csv file", e);
         }
 
+        gameLoaderService.setOnRunning(event -> statusLabel.setText("Loading game library..."));
         gameLoaderService.setOnSucceeded(event -> {
-            gameViewObservableList.setAll(gameLoaderService.getValue());
+            gameViews.clear();
+            gameViews.addAll(gameLoaderService.getValue());
+            gameViewObservableList.setAll(gameViews);
             statusLabel.setText(format("%d games found.", gamesListView.getItems().size()));
             populateGenres();
             refresh();
@@ -341,20 +360,25 @@ public class AppPresenter implements Initializable {
         stage.show();
     }
 
-    public void myGames() {
+    public void showMyLibrary() {
         gamePane.setVisible(false);
+        gameViewObservableList.clear();
         gameLoaderService.reset();
         gameLoaderService.start();
+        gamesListView.setItems(gameViewObservableList);
+        gamesListView.setCellFactory(getHighlightCellFactory());
         gamesListView.setOnMouseClicked(onClickMyGames());
     }
 
-    public void allGames() {
+    public void showCompleteLibrary() {
         installButton.setText("Install");
         installButton.setDisable(true);
         uninstallButton.setDisable(true);
         gamePane.setVisible(false);
         statusLabel.setText("");
-        gameViewObservableList.setAll(fullGameList);
+//        gameViewObservableList.setAll(fullGameList);
+        gamesListView.setItems(observableList(fullGameList));
+
         gamesListView.setOnMouseClicked(event -> {
             final ObservableList<GameView> selectedItems = gamesListView.getSelectionModel().getSelectedItems();
             gamePane.setVisible(false);
@@ -369,6 +393,72 @@ public class AppPresenter implements Initializable {
                 loadGameImage(gameView.game().cover());
             }
         });
+//        gamesListView.refresh();
+        refresh();
+    }
+
+    public void showInstalledGames() {
+        gameViewObservableList.clear();
+
+        installButton.setText("Install");
+        installButton.setDisable(true);
+        uninstallButton.setDisable(false);
+        gamePane.setVisible(false);
+        statusLabel.setText("");
+
+        gameLoaderService.reset();
+        gameLoaderService.start();
+
+        final List<String> installGameFilenames = getInstalledGames().stream()
+                .map(file -> getBaseName(file.getName()))
+                .collect(toList());
+
+        final List<GameView> installedGames = new ArrayList<>();
+        for (GameView gameView : gameViews) {
+            final String fileBaseName = gameView.fileBaseName();
+            if (installGameFilenames.contains(fileBaseName)) {
+                installedGames.add(gameView);
+            }
+        }
+
+        gamesListView.setCellFactory(param -> new ListCell<GameView>() {
+            @Override
+            protected void updateItem(GameView gameView, boolean empty) {
+                super.updateItem(gameView, empty);
+                getStyleClass().remove("gameInstalled");
+            }
+
+            @Override
+            public void updateSelected(boolean selected) {
+                super.updateSelected(selected);
+            }
+        });
+
+//        gameViewObservableList.setAll(installedGames);
+        gamesListView.setItems(observableList(installedGames));
+
+
+//        gamesListView.setOnMouseClicked(onClickMyGames());
+    }
+
+    public void install() {
+        if (!installGameService.isRunning()) {
+            installGameService.setGames(new ArrayList<>(gamesListView.getSelectionModel().getSelectedItems()));
+            installGameService.reset();
+            installGameService.start();
+        } else {
+            LOGGER.warn("Installation process is currently running.");
+        }
+    }
+
+    public void uninstall() {
+        if (!uninstallGameService.isRunning()) {
+            uninstallGameService.setGames(new ArrayList<>(gamesListView.getSelectionModel().getSelectedItems()));
+            uninstallGameService.reset();
+            uninstallGameService.start();
+        } else {
+            LOGGER.warn("Removal process is currently running.");
+        }
     }
 
     private EventHandler<MouseEvent> onClickMyGames() {
@@ -415,26 +505,6 @@ public class AppPresenter implements Initializable {
         };
     }
 
-    public void install() {
-        if (!installGameService.isRunning()) {
-            installGameService.setGames(new ArrayList<>(gamesListView.getSelectionModel().getSelectedItems()));
-            installGameService.reset();
-            installGameService.start();
-        } else {
-            LOGGER.warn("Installation process is currently running.");
-        }
-    }
-
-    public void uninstall() {
-        if (!uninstallGameService.isRunning()) {
-            uninstallGameService.setGames(new ArrayList<>(gamesListView.getSelectionModel().getSelectedItems()));
-            uninstallGameService.reset();
-            uninstallGameService.start();
-        } else {
-            LOGGER.warn("Removal process is currently running.");
-        }
-    }
-
     private void loadGameImage(URL cover) {
         try {
             gameImageView.setImage(null);
@@ -443,15 +513,14 @@ public class AppPresenter implements Initializable {
             }
 
         } catch (IOException e) {
-            LOGGER.error(e.getMessage(), e);
+            LOGGER.error("Cannot show cover image", e);
         }
     }
 
     private List<File> getInstalledGames() {
         if (getPspGamesDirectory().exists()) {
-            return listFilesAndDirs(getPspGamesDirectory(),
-                    new WildcardFileFilter(new String[]{"*.cso", "*.iso"}),
-                    FileFileFilter.FILE).stream()
+            return listFilesAndDirs(getPspGamesDirectory(), new WildcardFileFilter(new String[]{"*.cso", "*.iso"}), FILE)
+                    .stream()
                     .sorted(comparing(File::getName))
                     .filter(file -> !file.getAbsolutePath().equals(getPspGamesDirectory().getAbsolutePath() + "/.cso"))
                     .collect(toList());
@@ -471,7 +540,7 @@ public class AppPresenter implements Initializable {
                 getStyleClass().remove("gameInstalled");
                 if (!empty) {
                     Platform.runLater(() -> setText(gameView.game().title()));
-                    if (installedGames.contains(cleanFileName(gameView.fileBaseName()))) {
+                    if (installedGames.contains(clean(gameView.fileBaseName()))) {
                         getStyleClass().add("gameInstalled");
                     }
                 }

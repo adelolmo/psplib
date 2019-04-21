@@ -1,9 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
 <Pane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="593.0" prefWidth="684.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.ado.psplib.view.AppPresenter">
    <children>
       <MenuBar prefHeight="29.0" prefWidth="684.0">
@@ -18,8 +29,9 @@
           </Menu>
             <Menu mnemonicParsing="false" text="View">
                 <items>
-                    <MenuItem mnemonicParsing="false" onAction="#myGames" text="My games"/>
-                    <MenuItem mnemonicParsing="false" onAction="#allGames" text="All games"/>
+                   <MenuItem mnemonicParsing="false" onAction="#showMyLibrary" text="My library"/>
+                   <MenuItem mnemonicParsing="false" onAction="#showCompleteLibrary" text="Complete library"/>
+                   <MenuItem mnemonicParsing="false" onAction="#showInstalledGames" text="Installed games"/>
                 </items>
             </Menu>
           <Menu mnemonicParsing="false" text="Help">
