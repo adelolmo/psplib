@@ -5,12 +5,9 @@ Organize your PSP games library and connect it with you PSP console
 
 # How to Install
 
-## Setup repository
-```
-wget -O - http://adelolmo.github.io/andoni.delolmo@gmail.com.gpg.key | sudo apt-key add -
-echo "deb http://adelolmo.github.io xenial main" | sudo tee /etc/apt/sources.list.d/adelolmo.list
-sudo apt-get update
-```
+### Setup repository
+
+Follow the instructions [here](https://adelolmo.github.io).
 
 ## Install package
 ```
