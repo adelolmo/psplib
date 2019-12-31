@@ -11,7 +11,7 @@ public class GameIdGenerator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GameIdGenerator.class);
 
-    public static String toId(String gameName) {
+    public static String toId(final String gameName) {
         final String gameIdWithNoSymbols = gameName.toLowerCase()
                 .replaceAll(" ", "-")
                 .replaceAll("\\.", "-")

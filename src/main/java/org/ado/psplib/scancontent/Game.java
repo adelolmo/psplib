@@ -50,7 +50,7 @@ public class Game {
             return new Game(id,
                     title,
                     genres.split(","),
-                    Integer.valueOf(score),
+                    Integer.parseInt(score),
                     company,
                     DATE_FORMAT.parse(releasedAt),
                     cover);

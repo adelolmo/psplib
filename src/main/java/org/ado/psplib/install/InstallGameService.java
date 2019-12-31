@@ -46,11 +46,11 @@ public class InstallGameService extends Service<GameView> {
                 for (GameView gameView : games) {
                     updateValue(gameView);
 
-                    final String csoFilename = gameView.fileBaseName() + ".cso";
+                    final String csoFilename = gameView.csoFilename();
                     final File csoFile = new File(libraryDirectoryName, csoFilename);
                     LOGGER.info("CSO file: {}", csoFile.getAbsoluteFile());
 
-                    final String isoFilename = gameView.fileBaseName() + ".iso";
+                    final String isoFilename = gameView.isoFilename();
                     final File libIsoFile = new File(libraryDirectoryName, isoFilename);
                     final File pspIsoFile = new File(pspIsoDirectory, clean(isoFilename));
 

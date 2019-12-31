@@ -20,6 +20,14 @@ public class GameView {
         return fileBaseName;
     }
 
+    public String csoFilename() {
+        return fileBaseName + ".cso";
+    }
+
+    public String isoFilename() {
+        return fileBaseName + ".iso";
+    }
+
     public Game game() {
         return gameDetails;
     }

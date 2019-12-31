@@ -24,10 +24,12 @@ import javafx.scene.layout.Pane;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.util.Callback;
+import org.ado.psplib.GameDatabase;
+import org.ado.psplib.GameMetadata;
 import org.ado.psplib.common.FileSize;
 import org.ado.psplib.gameloader.GameLoaderService;
 import org.ado.psplib.install.InstallGameService;
-import org.ado.psplib.scancontent.Game;
+import org.ado.psplib.psp.PspDevice;
 import org.ado.psplib.scancontent.ScanContentService;
 import org.ado.psplib.uninstall.UninstallGameService;
 import org.ado.psplib.view.about.AboutPresenter;
@@ -38,35 +40,26 @@ import org.ado.psplib.view.scanErrors.ScanErrorsPresenter;
 import org.ado.psplib.view.scanErrors.ScanErrorsView;
 import org.ado.psplib.view.settings.SettingsPresenter;
 import org.ado.psplib.view.settings.SettingsView;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.io.filefilter.WildcardFileFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.ResourceBundle;
 
 import static java.lang.String.format;
 import static java.lang.String.join;
-import static java.lang.String.valueOf;
 import static java.util.Arrays.asList;
-import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
 import static javafx.collections.FXCollections.observableList;
 import static org.ado.psplib.common.AppConfiguration.getConfiguration;
 import static org.ado.psplib.common.FilenameUtils.clean;
-import static org.apache.commons.io.FileUtils.listFilesAndDirs;
 import static org.apache.commons.io.FilenameUtils.getBaseName;
-import static org.apache.commons.io.filefilter.FileFileFilter.FILE;
 import static org.apache.commons.lang.StringUtils.isEmpty;
 
 /**
@@ -85,8 +78,9 @@ public class AppPresenter implements Initializable {
 
     private Stage stage;
 
-    @FXML
-    private ListView<GameView> gamesListView;
+    private final List<GameView> myLibraryGameList = new ArrayList<>();
+    private final List<GameView> completeGameList = new ArrayList<>();
+    private final List<GameView> installedGameList = new ArrayList<>();
 
     @FXML
     private Label statusLabel;
@@ -126,15 +120,20 @@ public class AppPresenter implements Initializable {
 
     @FXML
     private ComboBox<String> genreComboBox;
-
-    private final ObservableList<GameView> gameViewObservableList = FXCollections.observableArrayList();
-    private final List<GameView> fullGameList = new ArrayList<>();
-    private final List<GameView> gameViews = new ArrayList<>();
+    private final ObservableList<GameView> myLibraryViewObservableList = FXCollections.observableArrayList();
+    private final ObservableList<GameView> completeLibraryObservableList = FXCollections.observableArrayList();
+    private final ObservableList<GameView> installedGamesObservableList = FXCollections.observableArrayList();
+    @FXML
+    private ListView<GameView> myLibraryListView;
+    @FXML
+    private ListView<GameView> installedGamesListView;
+    @FXML
+    private ListView<GameView> completeLibraryListView;
 
     public AppPresenter() {
         final Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
         gameLoaderService = new GameLoaderService(gson);
-        scanContentService = new ScanContentService(gson);
+        scanContentService = new ScanContentService(gson, new GameMetadata(gson));
         installGameService = new InstallGameService();
         uninstallGameService = new UninstallGameService();
     }
@@ -145,89 +144,111 @@ public class AppPresenter implements Initializable {
         sortComboBox.getItems().addAll(SortType.TITLE, SortType.SCORE, SortType.SIZE);
         sortComboBox.valueProperty().addListener((observable, oldValue, newValue) -> onSearch());
         genreComboBox.valueProperty().addListener((observable, oldValue, newValue) -> onSearch());
-        gamesListView.setItems(gameViewObservableList);
 
-        final CSVParser csv;
-        try {
-            csv = CSVParser.parse(ScanContentService.class.getResource("games.csv"),
-                    Charset.forName(StandardCharsets.UTF_8.name()),
-                    CSVFormat.newFormat(';').withFirstRecordAsHeader());
+        myLibraryListView.toFront();
+        myLibraryListView.setItems(myLibraryViewObservableList);
+        myLibraryListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        myLibraryListView.setCellFactory(getHighlightCellFactory());
+        myLibraryListView.setOnMouseClicked(showGameDetailsEvent(myLibraryListView));
 
+        installedGamesListView.setItems(installedGamesObservableList);
+        installedGamesListView.setOnMouseClicked(showGameDetailsEvent(installedGamesListView));
+        installedGamesListView.setCellFactory(param -> new ListCell<GameView>() {
+            @Override
+            protected void updateItem(GameView gameView, boolean empty) {
+                super.updateItem(gameView, empty);
+                getStyleClass().remove("gameInstalled");
+                if (empty) {
+                    Platform.runLater(() -> setText(""));
+                    return;
+                }
+                Platform.runLater(() -> setText(gameView.game().title()));
+            }
+        });
 
-            csv.iterator().forEachRemaining(csvRecord ->
-                    fullGameList.add(
-                            new GameView("",
-                                    Game.of(csvRecord.get("id"),
-                                            csvRecord.get("title"),
-                                            csvRecord.get("genres"),
-                                            csvRecord.get("company"),
-                                            csvRecord.get("score"),
-                                            csvRecord.get("released_at"),
-                                            ScanContentService.class.getResource(csvRecord.get("id") + ".jpeg")))));
-        } catch (IOException e) {
-            LOGGER.error("Cannot parse games csv file", e);
-        }
+        GameDatabase.getAll()
+                .forEach((s, game) -> completeGameList.add(new GameView("", game)));
+        completeGameList.sort(Comparator.comparing(gameView -> gameView.game().title()));
+        completeLibraryObservableList.setAll(completeGameList);
+        completeLibraryListView.setItems(completeLibraryObservableList);
+        completeLibraryListView.setOnMouseClicked(event -> {
+            final ObservableList<GameView> selectedItems = completeLibraryListView.getSelectionModel().getSelectedItems();
+            gamePane.setVisible(false);
+            if (!selectedItems.isEmpty()) {
+                gamePane.setVisible(true);
+
+                final GameView gameView = selectedItems.get(0);
+                companyLabel.setText(gameView.game().company());
+                releaseDateLabel.setText(DATE_FORMAT.format(gameView.game().releaseDate()));
+                genreLabel.setText(join(", ", gameView.game().genres()));
+                scoreLabel.setText(gameView.game().score() + "/100");
+                loadGameImage(gameView.game().cover());
+            }
+        });
 
         gameLoaderService.setOnRunning(event -> statusLabel.setText("Loading game library..."));
         gameLoaderService.setOnSucceeded(event -> {
-            gameViews.clear();
-            gameViews.addAll(gameLoaderService.getValue());
-            gameViewObservableList.setAll(gameViews);
-            statusLabel.setText(format("%d games found.", gamesListView.getItems().size()));
+            myLibraryGameList.clear();
+            myLibraryGameList.addAll(gameLoaderService.getValue());
+            myLibraryViewObservableList.setAll(gameLoaderService.getValue());
+
+            statusLabel.setText(format("%d games found.", myLibraryListView.getItems().size()));
             populateGenres();
-            refresh();
+            refreshInstalledGames();
+            refreshSpaceProgressBar();
         });
         gameLoaderService.setOnFailed(event -> {
-            statusLabel.setText("Error.");
-            refresh();
+            statusLabel.setText("Error. > " + event.getSource().getMessage());
+            refreshSpaceProgressBar();
         });
 
-        scanContentService.setList(gameViewObservableList);
         scanContentService.setOnSucceeded(event -> {
+            myLibraryViewObservableList.setAll(scanContentService.getValue());
+
             statusLabel.textProperty().unbind();
-            statusLabel.setText(format("Scan new content finished. %d games available.", gameViewObservableList.size()));
+            statusLabel.setText(format("Scan new content finished. %d games available.", myLibraryViewObservableList.size()));
             populateGenres();
-            refresh();
+            refreshInstalledGames();
+            refreshSpaceProgressBar();
         });
         scanContentService.setOnFailed(event -> {
             statusLabel.setText("Scan new content failed!");
-            refresh();
+            refreshSpaceProgressBar();
             LOGGER.error(event.getSource().exceptionProperty().getValue().toString());
         });
-
-        gamesListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        gamesListView.setCellFactory(getHighlightCellFactory());
 
         installGameService.valueProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
                 statusLabel.setText(format("Installing \"%s\" ...", newValue.game().title()));
-                refresh();
+                refreshSpaceProgressBar();
             }
         });
         installGameService.setOnSucceeded(event -> {
             statusLabel.setText("All games installed successfully");
-            refresh();
+            refreshInstalledGames();
+            refreshSpaceProgressBar();
         });
         installGameService.setOnFailed(event -> {
             statusLabel.setText("Game(s) installation failed!");
-            refresh();
-            LOGGER.error("Game installation failed.", event.getSource().exceptionProperty().getValue());
+            refreshSpaceProgressBar();
+            LOGGER.error("Game installation failed. {}", event.getSource().exceptionProperty().getValue());
             error(((Exception) event.getSource().exceptionProperty().getValue()).getMessage());
         });
 
         uninstallGameService.valueProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue != null) {
                 statusLabel.setText(format("Removing \"%s\" ...", newValue.game().title()));
-                refresh();
+                refreshSpaceProgressBar();
             }
         });
         uninstallGameService.setOnSucceeded(event -> {
             statusLabel.setText("All games removed successfully");
-            refresh();
+            refreshInstalledGames();
+            refreshSpaceProgressBar();
         });
         uninstallGameService.setOnFailed(event -> {
             statusLabel.setText("Game(s) removal failed!");
-            refresh();
+            refreshSpaceProgressBar();
             LOGGER.error(event.getSource().exceptionProperty().getValue().toString());
         });
 
@@ -235,9 +256,21 @@ public class AppPresenter implements Initializable {
         gameLoaderService.start();
     }
 
+    private void refreshInstalledGames() {
+        final List<String> installGameFilenames = PspDevice.getInstalledGames().stream()
+                .map(file -> getBaseName(file.getName()))
+                .collect(toList());
+        installedGameList.clear();
+        installedGameList.addAll(
+                myLibraryGameList.stream()
+                        .filter(gameView -> installGameFilenames.contains(gameView.fileBaseName()))
+                        .collect(toList()));
+        installedGamesObservableList.setAll(installedGameList);
+    }
+
     private void populateGenres() {
         final List<String> genres = new ArrayList<>();
-        gameViewObservableList.forEach(gameView -> genres.addAll(asList(gameView.game().genres())));
+        myLibraryViewObservableList.forEach(gameView -> genres.addAll(asList(gameView.game().genres())));
         final List<String> uniqueGenres = genres.stream()
                 .distinct()
                 .sorted(String::compareTo)
@@ -247,50 +280,25 @@ public class AppPresenter implements Initializable {
     }
 
     public void onSearch() {
-        final String libraryDir = getConfiguration("lib.dir");
-        final List<GameView> collect = gameViewObservableList.stream()
+        myLibraryViewObservableList.setAll(applySearchFilters(myLibraryGameList));
+        completeLibraryObservableList.setAll(applySearchFilters(completeGameList));
+        installedGamesObservableList.setAll(applySearchFilters(installedGameList));
+        refreshSpaceProgressBar();
+    }
+
+    private List<GameView> applySearchFilters(List<GameView> gameViewList) {
+        return gameViewList.stream()
                 .filter(gameView -> gameView.game().title().toLowerCase()
                         .contains(searchTextField.getCharacters().toString()))
                 .filter(gameView ->
                         isEmpty(genreComboBox.getValue())
                                 || asList(gameView.game().genres()).contains(genreComboBox.getValue()))
-                .sorted(((gw1, gw2) -> {
-                    final SortType sortType = sortComboBox.getValue();
-                    if (sortType != null) {
-                        switch (sortType) {
-                            case TITLE:
-                                return gw1.game().title().compareTo(gw2.game().title());
-                            case SCORE:
-                                return Integer.compare(gw2.game().score(), gw1.game().score());
-                            case SIZE:
-                                return Long.compare(
-                                        new File(libraryDir, gw2.fileBaseName() + ".cso").length(),
-                                        new File(libraryDir, gw1.fileBaseName() + ".cso").length());
-                            default:
-                                return gw1.game().title().compareTo(gw2.game().title());
-                        }
-                    } else {
-                        return 1;
-                    }
-                })).collect(toList());
-
-        gamesListView.setItems(observableList(collect));
-
-        refresh();
-    }
-
-    private void refresh() {
-        gamesListView.setCellFactory(getHighlightCellFactory());
-        gamesListView.setOnMouseClicked(onClickMyGames());
-        refreshSpaceProgressBar();
-    }
-
-    private File getPspGamesDirectory() {
-        return new File(getConfiguration("psp.dir"), "ISO");
+                .sorted(new GameViewComparator(sortComboBox.getValue(), getConfiguration("lib.dir")))
+                .collect(toList());
     }
 
     private void refreshSpaceProgressBar() {
-        final File pspGamesDirectory = getPspGamesDirectory();
+        final File pspGamesDirectory = PspDevice.getPspGamesDirectory();
         final long freeSpace = pspGamesDirectory.getFreeSpace();
         freeLabel.setText(new FileSize(freeSpace).toMegaBytes() + " MB Free");
         final long usedSpace = pspGamesDirectory.getTotalSpace() - freeSpace;
@@ -361,89 +369,32 @@ public class AppPresenter implements Initializable {
     }
 
     public void showMyLibrary() {
+        myLibraryListView.toFront();
         gamePane.setVisible(false);
-        gameViewObservableList.clear();
-        gameLoaderService.reset();
-        gameLoaderService.start();
-        gamesListView.setItems(gameViewObservableList);
-        gamesListView.setCellFactory(getHighlightCellFactory());
-        gamesListView.setOnMouseClicked(onClickMyGames());
     }
 
     public void showCompleteLibrary() {
+        completeLibraryListView.toFront();
         installButton.setText("Install");
         installButton.setDisable(true);
         uninstallButton.setDisable(true);
         gamePane.setVisible(false);
         statusLabel.setText("");
-//        gameViewObservableList.setAll(fullGameList);
-        gamesListView.setItems(observableList(fullGameList));
-
-        gamesListView.setOnMouseClicked(event -> {
-            final ObservableList<GameView> selectedItems = gamesListView.getSelectionModel().getSelectedItems();
-            gamePane.setVisible(false);
-            if (!selectedItems.isEmpty()) {
-                gamePane.setVisible(true);
-
-                final GameView gameView = selectedItems.get(0);
-                companyLabel.setText(gameView.game().company());
-                releaseDateLabel.setText(DATE_FORMAT.format(gameView.game().releaseDate()));
-                genreLabel.setText(join(", ", (CharSequence[]) gameView.game().genres()));
-                scoreLabel.setText(valueOf(gameView.game().score()) + "/100");
-                loadGameImage(gameView.game().cover());
-            }
-        });
-//        gamesListView.refresh();
-        refresh();
+        refreshSpaceProgressBar();
     }
 
     public void showInstalledGames() {
-        gameViewObservableList.clear();
-
+        installedGamesListView.toFront();
         installButton.setText("Install");
         installButton.setDisable(true);
         uninstallButton.setDisable(false);
         gamePane.setVisible(false);
         statusLabel.setText("");
-
-        gameLoaderService.reset();
-        gameLoaderService.start();
-
-        final List<String> installGameFilenames = getInstalledGames().stream()
-                .map(file -> getBaseName(file.getName()))
-                .collect(toList());
-
-        final List<GameView> installedGames = new ArrayList<>();
-        for (GameView gameView : gameViews) {
-            final String fileBaseName = gameView.fileBaseName();
-            if (installGameFilenames.contains(fileBaseName)) {
-                installedGames.add(gameView);
-            }
-        }
-
-        gamesListView.setCellFactory(param -> new ListCell<GameView>() {
-            @Override
-            protected void updateItem(GameView gameView, boolean empty) {
-                super.updateItem(gameView, empty);
-                getStyleClass().remove("gameInstalled");
-            }
-
-            @Override
-            public void updateSelected(boolean selected) {
-                super.updateSelected(selected);
-            }
-        });
-
-//        gameViewObservableList.setAll(installedGames);
-        gamesListView.setItems(observableList(installedGames));
-
-
-//        gamesListView.setOnMouseClicked(onClickMyGames());
     }
 
     public void install() {
         if (!installGameService.isRunning()) {
-            installGameService.setGames(new ArrayList<>(gamesListView.getSelectionModel().getSelectedItems()));
+            installGameService.setGames(new ArrayList<>(myLibraryListView.getSelectionModel().getSelectedItems()));
             installGameService.reset();
             installGameService.start();
         } else {
@@ -453,54 +404,55 @@ public class AppPresenter implements Initializable {
 
     public void uninstall() {
         if (!uninstallGameService.isRunning()) {
-            uninstallGameService.setGames(new ArrayList<>(gamesListView.getSelectionModel().getSelectedItems()));
+            uninstallGameService.setGames(new ArrayList<>(myLibraryListView.getSelectionModel().getSelectedItems()));
             uninstallGameService.reset();
             uninstallGameService.start();
+            refreshSpaceProgressBar();
         } else {
             LOGGER.warn("Removal process is currently running.");
         }
     }
 
-    private EventHandler<MouseEvent> onClickMyGames() {
+    private EventHandler<MouseEvent> showGameDetailsEvent(ListView<GameView> listView) {
         return event -> {
-            final ObservableList<GameView> selectedItems = gamesListView.getSelectionModel().getSelectedItems();
-            if (!selectedItems.isEmpty()) {
-                gamePane.setVisible(true);
-
-                final GameView gameView = selectedItems.get(0);
-                companyLabel.setText(gameView.game().company());
-                releaseDateLabel.setText(DATE_FORMAT.format(gameView.game().releaseDate()));
-                genreLabel.setText(join(", ", (CharSequence[]) gameView.game().genres()));
-                scoreLabel.setText(valueOf(gameView.game().score()) + "/100");
-                loadGameImage(gameView.game().cover());
-
-                final File csoGame = new File(getConfiguration("lib.dir"), gameView.fileBaseName() + ".cso");
-                sizeLabel.setText(new FileSize(csoGame.length()).toMegaBytes() + " MB");
-                final File isoGame = new File(getConfiguration("lib.dir"), gameView.fileBaseName() + ".iso");
-                if (isoGame.exists()) {
-                    sizeLabel.setText(new FileSize(isoGame.length()).toMegaBytes() + " MB");
-                }
-
-                final boolean isInstalled = AppPresenter.this.getInstalledGames().stream()
-                        .map(file -> getBaseName(file.getName()))
-                        .collect(toList())
-                        .contains(gameView.fileBaseName());
-
-                installButton.setText("Install");
-                installButton.setDisable(true);
-                uninstallButton.setDisable(true);
-
-                if (isInstalled) {
-                    uninstallButton.setDisable(false);
-                } else {
-                    installButton.setText("Install");
-                    if (selectedItems.size() > 1) {
-                        installButton.setText(format("Install (%d)", selectedItems.size()));
-                    }
-                    installButton.setDisable(false);
-                }
-            } else {
+            final ObservableList<GameView> selectedItems = listView.getSelectionModel().getSelectedItems();
+            if (selectedItems.isEmpty()) {
                 gamePane.setVisible(false);
+                return;
+            }
+            gamePane.setVisible(true);
+
+            final GameView gameView = selectedItems.get(0);
+            companyLabel.setText(gameView.game().company());
+            releaseDateLabel.setText(DATE_FORMAT.format(gameView.game().releaseDate()));
+            genreLabel.setText(join(", ", gameView.game().genres()));
+            scoreLabel.setText(gameView.game().score() + "/100");
+            loadGameImage(gameView.game().cover());
+
+            final File csoGame = new File(getConfiguration("lib.dir"), gameView.csoFilename());
+            sizeLabel.setText(new FileSize(csoGame.length()).toMegaBytes() + " MB");
+            final File isoGame = new File(getConfiguration("lib.dir"), gameView.isoFilename());
+            if (isoGame.exists()) {
+                sizeLabel.setText(new FileSize(isoGame.length()).toMegaBytes() + " MB");
+            }
+
+            final boolean isInstalled = PspDevice.getInstalledGames().stream()
+                    .map(file -> getBaseName(file.getName()))
+                    .collect(toList())
+                    .contains(gameView.fileBaseName());
+
+            installButton.setText("Install");
+            installButton.setDisable(true);
+            uninstallButton.setDisable(true);
+
+            if (isInstalled) {
+                uninstallButton.setDisable(false);
+            } else {
+                installButton.setText("Install");
+                if (selectedItems.size() > 1) {
+                    installButton.setText(format("Install (%d)", selectedItems.size()));
+                }
+                installButton.setDisable(false);
             }
         };
     }
@@ -517,20 +469,8 @@ public class AppPresenter implements Initializable {
         }
     }
 
-    private List<File> getInstalledGames() {
-        if (getPspGamesDirectory().exists()) {
-            return listFilesAndDirs(getPspGamesDirectory(), new WildcardFileFilter(new String[]{"*.cso", "*.iso"}), FILE)
-                    .stream()
-                    .sorted(comparing(File::getName))
-                    .filter(file -> !file.getAbsolutePath().equals(getPspGamesDirectory().getAbsolutePath() + "/.cso"))
-                    .collect(toList());
-        } else {
-            return Collections.emptyList();
-        }
-    }
-
     private Callback<ListView<GameView>, ListCell<GameView>> getHighlightCellFactory() {
-        final List<String> installedGames = getInstalledGames().stream()
+        final List<String> installedGames = PspDevice.getInstalledGames().stream()
                 .map(file -> getBaseName(file.getName()))
                 .collect(toList());
         return param -> new ListCell<GameView>() {
@@ -538,11 +478,13 @@ public class AppPresenter implements Initializable {
             protected void updateItem(GameView gameView, boolean empty) {
                 super.updateItem(gameView, empty);
                 getStyleClass().remove("gameInstalled");
-                if (!empty) {
-                    Platform.runLater(() -> setText(gameView.game().title()));
-                    if (installedGames.contains(clean(gameView.fileBaseName()))) {
-                        getStyleClass().add("gameInstalled");
-                    }
+                if (empty) {
+                    Platform.runLater(() -> setText(""));
+                    return;
+                }
+                Platform.runLater(() -> setText(gameView.game().title()));
+                if (installedGames.contains(clean(gameView.fileBaseName()))) {
+                    getStyleClass().add("gameInstalled");
                 }
             }
 

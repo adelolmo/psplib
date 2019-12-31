@@ -5,6 +5,7 @@ import org.apache.commons.io.FileUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 
 public class AppConfiguration {
@@ -30,7 +31,7 @@ public class AppConfiguration {
     }
 
     public static boolean getConfigurationBoolean(String property) {
-        return Boolean.valueOf(getConfiguration(property));
+        return Boolean.parseBoolean(getConfiguration(property));
     }
 
     private static void store() {
@@ -50,11 +51,21 @@ public class AppConfiguration {
 
     private static Properties loadFileProperties(File file) {
         final Properties prop = new Properties();
+        InputStream inStream = null;
         try {
             FileUtils.touch(file);
-            prop.load(new FileInputStream(file));
+            inStream = new FileInputStream(file);
+            prop.load(inStream);
         } catch (IOException e) {
             throw new IllegalStateException("Cannot read application configuration file", e);
+        } finally {
+            try {
+                if (inStream != null) {
+                    inStream.close();
+                }
+            } catch (IOException e) {
+                // ignore
+            }
         }
         return prop;
     }

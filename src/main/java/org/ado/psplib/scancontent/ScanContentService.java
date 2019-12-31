@@ -4,10 +4,10 @@ import com.google.gson.Gson;
 import javafx.collections.ObservableList;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
+import org.ado.psplib.GameDatabase;
+import org.ado.psplib.GameMetadata;
 import org.ado.psplib.common.AppConfiguration;
 import org.ado.psplib.view.GameView;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFileFilter;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
@@ -19,12 +19,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -37,26 +35,28 @@ import static org.apache.commons.io.FilenameUtils.getBaseName;
  * @author Andoni del Olmo
  * @since 14.05.16
  */
-public class ScanContentService extends Service<Void> {
+public class ScanContentService extends Service<ObservableList<GameView>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ScanContentService.class);
     private final Gson gson;
+    private final GameMetadata gameMetadata;
 
     private ObservableList<GameView> list;
 
-    public ScanContentService(Gson gson) {
+    public ScanContentService(Gson gson, GameMetadata gameMetadata) {
         this.gson = gson;
+        this.gameMetadata = gameMetadata;
     }
 
-    public void setList(ObservableList<GameView> list) {
+/*    public void setList(ObservableList<GameView> list) {
         this.list = list;
-    }
+    }*/
 
     @Override
-    protected Task<Void> createTask() {
-        return new Task<Void>() {
+    protected Task<ObservableList<GameView>> createTask() {
+        return new Task<ObservableList<GameView>>() {
             @Override
-            protected Void call() throws Exception {
+            protected ObservableList<GameView> call() throws Exception {
                 final String libDir = AppConfiguration.getConfiguration("lib.dir");
 
                 final List<File> fileList =
@@ -72,20 +72,7 @@ public class ScanContentService extends Service<Void> {
                                 .sorted(Comparator.comparing(File::getName))
                                 .collect(Collectors.toList());
 
-                final CSVParser csv =
-                        CSVParser.parse(ScanContentService.class.getResource("games.csv"),
-                                Charset.forName("UTF-8"),
-                                CSVFormat.newFormat(';').withFirstRecordAsHeader());
-                final Map<String, Game> games = new HashMap<>();
-                csv.iterator().forEachRemaining(strings ->
-                        games.put(strings.get("id"),
-                                Game.of(strings.get("id"),
-                                        strings.get("title"),
-                                        strings.get("genres"),
-                                        strings.get("company"),
-                                        strings.get("score"),
-                                        strings.get("released_at"),
-                                        ScanContentService.class.getResource(strings.get("id") + ".jpeg"))));
+                final Map<String, Game> games = GameDatabase.getAll();
 
                 for (final File file : fileList) {
                     updateMessage(format("Processing \"%s\" ...", file.getName()));
@@ -123,7 +110,7 @@ public class ScanContentService extends Service<Void> {
                         }
                     }
                 }
-                return null;
+                return list;
             }
         };
     }

@@ -49,30 +49,34 @@ public class GameLoaderService extends Service<List<GameView>> {
             @Override
             protected List<GameView> call() {
                 final List<GameView> list = new ArrayList<>();
+                try {
 
-                if (libraryDir != null && new File(libraryDir).exists()) {
-                    listFilesAndDirs(new File(libraryDir),
-                            new WildcardFileFilter("*.json"),
-                            FileFileFilter.FILE)
-                            .stream()
-                            .filter(file -> !file.getAbsolutePath().equals(libraryDir))
-                            .forEach(file -> {
-                                try {
-                                    final Game game = gson.fromJson(new FileReader(file), Game.class);
-                                    list.add(new GameView(getBaseName(file.getName()),
-                                            new Game(game.id(),
-                                                    game.title(),
-                                                    game.genres(),
-                                                    game.score(),
-                                                    game.company(),
-                                                    game.releaseDate(),
-                                                    ScanContentService.class.getResource(game.id() + ".jpeg"))));
-                                } catch (FileNotFoundException e) {
-                                    LOGGER.error(format("Json file not found %s", file.getAbsolutePath()), e);
-                                }
-                            });
+                    if (libraryDir != null && new File(libraryDir).exists()) {
+                        listFilesAndDirs(new File(libraryDir),
+                                new WildcardFileFilter("*.json"),
+                                FileFileFilter.FILE)
+                                .stream()
+                                .filter(file -> !file.getAbsolutePath().equals(libraryDir))
+                                .forEach(file -> {
+                                    try {
+                                        final Game game = gson.fromJson(new FileReader(file), Game.class);
+                                        list.add(new GameView(getBaseName(file.getName()),
+                                                new Game(game.id(),
+                                                        game.title(),
+                                                        game.genres(),
+                                                        game.score(),
+                                                        game.company(),
+                                                        game.releaseDate(),
+                                                        ScanContentService.class.getResource(game.id() + ".jpeg"))));
+                                    } catch (FileNotFoundException e) {
+                                        LOGGER.error(format("Json file not found %s", file.getAbsolutePath()), e);
+                                    }
+                                });
+                    }
+                    list.sort(Comparator.comparing(o -> o.game().title()));
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-                list.sort(Comparator.comparing(o -> o.game().title()));
                 return list;
             }
         };

@@ -36,8 +36,8 @@ public class UninstallGameService extends Service<GameView> {
                     final String pspDirectoryName = getConfiguration("psp.dir");
                     final File pspIsoDirectory = new File(pspDirectoryName, "ISO");
 
-                    deleteQuietly(new File(pspIsoDirectory, gameView.fileBaseName() + ".cso"));
-                    deleteQuietly(new File(pspIsoDirectory, gameView.fileBaseName() + ".iso"));
+                    deleteQuietly(new File(pspIsoDirectory, gameView.csoFilename()));
+                    deleteQuietly(new File(pspIsoDirectory, gameView.isoFilename()));
                 }
                 return null;
             }
