@@ -11,7 +11,7 @@ run(){
 	# set branch release version
 	echo "> Building v.$1 ..."
 	mvn versions:set -DnewVersion="$1" > /dev/null 2>&1
-	mvn clean install -Pdeb -Prelease -DskipTests > /dev/null 2>&1
+	mvn clean package -Pdeb -Prelease -DskipTests > /dev/null 2>&1
 	git commit -a -m "release v.$1"
    	echo "> Pushing $1 branch ..."
     git push --set-upstream origin $1
