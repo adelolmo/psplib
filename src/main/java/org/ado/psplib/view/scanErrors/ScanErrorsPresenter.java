@@ -55,10 +55,16 @@ public class ScanErrorsPresenter implements Initializable {
     private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yyyy");
     private static final String ISO_WILDCARD = "*.iso";
     private static final String CSO_WILDCARD = "*.cso";
-    final Map<String, List<Game>> suggestionsMap = new HashMap<>();
-    final LevenshteinDistance distance = new LevenshteinDistance();
+    private static final int SUGGESTIONS_TAB = 0;
+    private static final int ALL_TAB = 1;
+
+    private final Map<String, List<Game>> suggestionsMap = new HashMap<>();
+    private final LevenshteinDistance distance = new LevenshteinDistance();
     private final GameMetadata gameMetadata;
     private final List<Game> fullGameList = new ArrayList<>();
+
+    private Stage stage;
+
     @FXML
     public ListView<String> unknownGameListView;
     @FXML
@@ -74,17 +80,12 @@ public class ScanErrorsPresenter implements Initializable {
     @FXML
     private Label companyLabel;
 
-    private Stage stage;
     @FXML
     private Label releaseDateLabel;
     @FXML
     private Label genreLabel;
     @FXML
     private Label scoreLabel;
-
-    public void setStage(Stage stage) {
-        this.stage = stage;
-    }
 
     @FXML
     private ImageView gameImageView;
@@ -94,10 +95,14 @@ public class ScanErrorsPresenter implements Initializable {
         gameMetadata = new GameMetadata(gson);
     }
 
+    public void setStage(Stage stage) {
+        this.stage = stage;
+    }
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-
         gamePane.setVisible(false);
+        selectButton.setDisable(true);
 
         unknownGameListView.setOnMouseClicked(event -> {
             final String selectedFilename =
@@ -116,7 +121,10 @@ public class ScanErrorsPresenter implements Initializable {
         gamesListView.setItems(observableList(fullGameList));
         gamesListView.setOnMouseClicked(onClickMyGames());
 
-        tabPaneSuggestions.setOnMouseClicked(event -> gamePane.setVisible(false));
+        tabPaneSuggestions.setOnMouseClicked(event -> {
+            gamePane.setVisible(false);
+            selectButton.setDisable(true);
+        });
 
         selectButton.setOnMouseClicked(event -> {
             final String basename = unknownGameListView.getSelectionModel().getSelectedItem();
@@ -133,6 +141,10 @@ public class ScanErrorsPresenter implements Initializable {
         });
 
         showUnknownGames();
+    }
+
+    public void close() {
+        stage.close();
     }
 
     private void showUnknownGames() {
@@ -168,17 +180,12 @@ public class ScanErrorsPresenter implements Initializable {
     private Game selectedGame(SingleSelectionModel<Tab> selectionModel) {
         final Game suggestion = suggestionsListView.getSelectionModel().getSelectedItem();
         switch (selectionModel.getSelectedIndex()) {
-            case 0: // suggestions
-                return suggestion;
-            case 1: // all
+            case ALL_TAB:
                 return gamesListView.getSelectionModel().getSelectedItem();
+            case SUGGESTIONS_TAB:
             default:
                 return suggestion;
         }
-    }
-
-    public void close() {
-        stage.close();
     }
 
     private Integer getDistance(LevenshteinDistance distance, String title, String fileName) {
@@ -187,6 +194,8 @@ public class ScanErrorsPresenter implements Initializable {
 
     private EventHandler<MouseEvent> onClickMyGames() {
         return event -> {
+            selectButton.setDisable(false);
+
             final ListView<Game> gamesList = (ListView<Game>) event.getSource();
             final ObservableList<Game> selectedItems = gamesList.getSelectionModel().getSelectedItems();
             if (selectedItems.isEmpty()) {
@@ -195,7 +204,7 @@ public class ScanErrorsPresenter implements Initializable {
             }
             gamePane.setVisible(true);
 
-            final Game game = selectedItems.get(0);
+            final Game game = selectedItems.get(SUGGESTIONS_TAB);
             companyLabel.setText(game.company());
             releaseDateLabel.setText(DATE_FORMAT.format(game.releaseDate()));
             genreLabel.setText(join(", ", game.genres()));

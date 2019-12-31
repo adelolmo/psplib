@@ -81,6 +81,9 @@ public class AppPresenter implements Initializable {
     private final List<GameView> myLibraryGameList = new ArrayList<>();
     private final List<GameView> completeGameList = new ArrayList<>();
     private final List<GameView> installedGameList = new ArrayList<>();
+    private final ObservableList<GameView> myLibraryViewObservableList = FXCollections.observableArrayList();
+    private final ObservableList<GameView> completeLibraryObservableList = FXCollections.observableArrayList();
+    private final ObservableList<GameView> installedGamesObservableList = FXCollections.observableArrayList();
 
     @FXML
     private Label statusLabel;
@@ -120,9 +123,7 @@ public class AppPresenter implements Initializable {
 
     @FXML
     private ComboBox<String> genreComboBox;
-    private final ObservableList<GameView> myLibraryViewObservableList = FXCollections.observableArrayList();
-    private final ObservableList<GameView> completeLibraryObservableList = FXCollections.observableArrayList();
-    private final ObservableList<GameView> installedGamesObservableList = FXCollections.observableArrayList();
+
     @FXML
     private ListView<GameView> myLibraryListView;
     @FXML
@@ -133,7 +134,7 @@ public class AppPresenter implements Initializable {
     public AppPresenter() {
         final Gson gson = new GsonBuilder().excludeFieldsWithoutExposeAnnotation().create();
         gameLoaderService = new GameLoaderService(gson);
-        scanContentService = new ScanContentService(gson, new GameMetadata(gson));
+        scanContentService = new ScanContentService(new GameMetadata(gson));
         installGameService = new InstallGameService();
         uninstallGameService = new UninstallGameService();
     }
@@ -203,10 +204,11 @@ public class AppPresenter implements Initializable {
         });
 
         scanContentService.setOnSucceeded(event -> {
-            myLibraryViewObservableList.setAll(scanContentService.getValue());
+            myLibraryGameList.addAll(scanContentService.getValue());
+            myLibraryViewObservableList.setAll(myLibraryGameList);
 
             statusLabel.textProperty().unbind();
-            statusLabel.setText(format("Scan new content finished. %d games available.", myLibraryViewObservableList.size()));
+            statusLabel.setText(format("Scan new content finished. %d games available.", myLibraryGameList.size()));
             populateGenres();
             refreshInstalledGames();
             refreshSpaceProgressBar();
